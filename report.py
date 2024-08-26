@@ -124,7 +124,7 @@ if __name__ == "__main__":
     ]
     
     # Generate text report
-    generate_report(results_list, report_type='text')
+    generate_report(results_list, report_type='.txt')
     
     # Generate PDF report
     generate_report(results_list, report_type='pdf')

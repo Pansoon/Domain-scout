@@ -1,15 +1,19 @@
 import re
 import tkinter as tk
-from tkinter import messagebox, filedialog  # Import filedialog for file selection
+from tkinter import messagebox, filedialog
 from IP_address import resolve_domain_to_ip
 from PORT_scan import scan_ports
 from HTTP_status import get_http_status_code
 from aggregation import aggregate_results
 from report import generate_report
+from config import load_config  # Import load_config to handle config file
 from colorama import init, Fore
 
 # Initialize colorama for terminal output (if needed)
 init(autoreset=True)
+
+# Initialize global config variable
+current_config = None
 
 def sanitize_domain_name(domain):
     """
@@ -34,7 +38,24 @@ def load_domains_from_file():
         display_error("No file selected")
         return []
 
+def load_config_file():
+    """
+    Opens a file dialog to load a configuration file.
+    """
+    global current_config
+    config_file_path = filedialog.askopenfilename(filetypes=[("Configuration files", "*.json *.txt")])
+    if config_file_path:
+        try:
+            current_config = load_config(config_file_path)
+            display_success(f"Configuration loaded from '{config_file_path}'")
+        except Exception as e:
+            display_error(f"Error loading configuration file: {e}")
+    else:
+        display_error("No configuration file selected")
+
 def run_scan():
+    global current_config
+    
     domain_input = entry_domain.get()
     domains = [domain_input] if domain_input else []
 
@@ -58,8 +79,8 @@ def run_scan():
                 continue
             display_message(f"Resolved IP for {domain}: {ip_address}", Fore.BLACK)
             
-            # Step 2: Scan ports
-            ports = [80, 443, 22]  # You can customize this or make it user-selectable
+            # Step 2: Scan ports with the loaded configuration
+            ports = current_config['ports'] if current_config else [80, 443, 22]
             port_status = scan_ports(ip_address, ports)
             display_message(f"Port scan results for {domain}: {port_status}", Fore.BLACK)
             
@@ -149,8 +170,11 @@ report_type_var = tk.StringVar(value='text')
 tk.Radiobutton(report_type_frame, text="Text", variable=report_type_var, value='text').grid(row=0, column=0)
 tk.Radiobutton(report_type_frame, text="PDF", variable=report_type_var, value='pdf').grid(row=0, column=1)
 
+# Load Config Button
+tk.Button(root, text="Load Config", command=load_config_file).grid(row=2, column=0, padx=10, pady=10, sticky='w')
+
 # Run Scan Button
-tk.Button(root, text="Run Scan", command=run_scan).grid(row=2, column=0, columnspan=3, pady=20)
+tk.Button(root, text="Run Scan", command=run_scan).grid(row=2, column=1, columnspan=2, pady=20)
 
 # Results Display
 text_results = tk.Text(root, height=15, width=70)
