@@ -1,16 +1,20 @@
 import socket
 import dns.resolver
+import re
 
 def resolve_domain_to_ip(domain_name):
     """
     Resolves a domain name to its corresponding IP address using both socket and dnspython.
 
     Parameters:
-    domain_name (str): The domain name to resolve.
+    domain_name (str): The domain name or URL to resolve.
 
     Returns:
     str: The resolved IP address, or None if the domain could not be resolved.
     """
+    # Remove protocol (http:// or https://) from the domain name
+    domain_name = re.sub(r'^https?://', '', domain_name).strip('/')
+
     # First attempt to resolve using socket
     try:
         ip_address = socket.gethostbyname(domain_name)

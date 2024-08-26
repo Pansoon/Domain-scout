@@ -62,5 +62,39 @@ def main_program(domain):
         log_action("Error", str(e))
         display_error(f"An error occurred: {e}")
 
+def main_program(domains):
+    for domain in domains:
+        try:
+            # Process each domain as before
+            ip_address = resolve_domain_to_ip(domain)
+            if not ip_address:
+                log_action("Domain Resolution", f"Failed to resolve IP address for {domain}")
+                display_error(f"Failed to resolve IP address for {domain}. Exiting.")
+                continue
+
+            log_action("Domain Resolution", f"IP Address for {domain}: {ip_address}")
+
+            ports = config['ports'] if config else [80, 443, 22]
+            port_status = scan_ports(ip_address, ports)
+            log_action("Port Scanning", f"Ports Scanned for {domain}: {ports}")
+
+            http_status = get_http_status_code(f"http://{domain}")
+            log_action("HTTP Status Code", f"Status Code for {domain}: {http_status}")
+
+            results = aggregate_results(ip_address, port_status, http_status)
+
+            display_results(results)
+
+            if 'generate_report' in globals():
+                generate_report(results)
+                log_action("Report Generation", f"Report saved successfully for {domain}")
+                display_success(f"Report generated and saved successfully for {domain}.")
+
+        except Exception as e:
+            handle_error(e)
+            log_action("Error", str(e))
+            display_error(f"An error occurred with domain {domain}: {e}")
+
+
 if __name__ == "__main__":
     get_user_input(main_program)  # Pass the main_program function to get_user_input

@@ -1,15 +1,22 @@
 import requests
 
+import requests
+import re
+
 def get_http_status_code(url):
     """
     Retrieves the HTTP status code from a given URL.
 
     Parameters:
-    url (str): The URL of the domain to retrieve the HTTP status code from.
+    url (str): The URL or domain to retrieve the HTTP status code from.
 
     Returns:
     int: The HTTP status code returned by the server, or None if the request fails.
     """
+    # Ensure the URL starts with http:// or https://
+    if not re.match(r'^https?://', url):
+        url = 'http://' + url
+    
     try:
         # Send an HTTP GET request to the URL
         response = requests.get(url, timeout=5)
