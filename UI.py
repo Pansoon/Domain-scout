@@ -48,28 +48,37 @@ def display_results(results):
     """
     Displays the aggregated results in the text area of the GUI.
     """
+    text_results.delete(1.0, tk.END)  # Clear the text box before displaying new results
     result_text = ""
     for key, value in results.items():
         result_text += f"{key}: {value}\n"
-    text_results.delete(1.0, tk.END)
     text_results.insert(tk.END, result_text)
 
 def display_message(message, color=Fore.BLACK):
     """
-    Displays a message in the terminal (not used in GUI version).
+    Displays a message in the output box of the GUI.
     """
-    print(f"{color}{message}")
+    if color == Fore.RED:
+        text_results.insert(tk.END, f"[ERROR] {message}\n", "error")
+    elif color == Fore.GREEN:
+        text_results.insert(tk.END, f"[SUCCESS] {message}\n", "success")
+    else:
+        text_results.insert(tk.END, f"{message}\n")
+    
+    text_results.see(tk.END)  # Scroll to the end of the text box to show the latest message
 
 def display_error(message):
     """
-    Displays an error message in red in a message box.
+    Displays an error message in red in both the output box and a message box.
     """
+    display_message(f"Error: {message}", Fore.RED)
     messagebox.showerror("Error", message)
 
 def display_success(message):
     """
-    Displays a success message in green in a message box.
+    Displays a success message in green in both the output box and a message box.
     """
+    display_message(message, Fore.GREEN)
     messagebox.showinfo("Success", message)
 
 # Initialize tkinter window
@@ -93,6 +102,8 @@ tk.Button(root, text="Run Scan", command=run_scan).grid(row=2, column=0, columns
 # Results Display
 text_results = tk.Text(root, height=15, width=70)
 text_results.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+text_results.tag_config("error", foreground="red")
+text_results.tag_config("success", foreground="green")
 
 # Start the GUI event loop
 root.mainloop()
