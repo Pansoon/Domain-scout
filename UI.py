@@ -45,6 +45,8 @@ def run_scan():
         display_error("No domains provided.")
         return
 
+    results_list = []  # Initialize an empty list to hold results for all domains
+
     sanitized_domains = [sanitize_domain_name(domain) for domain in domains]
 
     try:
@@ -62,7 +64,7 @@ def run_scan():
             display_message(f"Port scan results for {domain}: {port_status}", Fore.BLACK)
             
             # Step 3: Get HTTP status code
-            http_status = get_http_status_code(domain)  # Ensure this is a string, not a list
+            http_status = get_http_status_code(domain)
             display_message(f"HTTP status code for {domain}: {http_status}", Fore.BLACK)
             
             # Step 4: Aggregate results and include domain name
@@ -73,13 +75,16 @@ def run_scan():
                 "HTTP Status": http_status
             }
             
-            # Step 5: Display results
-            display_results(results)
-            
-            # Step 6: Generate report
+            # Add the results for this domain to the list of all results
+            results_list.append(results)
+        
+        # Step 5: Generate the report for all domains
+        if results_list:
             report_type = report_type_var.get()
-            generate_report([results], report_type=report_type)  # Pass results as a list
-            display_success(f"Report generated as {report_type} format for {domain}.")
+            generate_report(results_list, report_type=report_type)
+            display_success(f"Report generated as {report_type} format for all domains.")
+        else:
+            display_error("No valid results to report.")
         
     except Exception as e:
         display_error(str(e))

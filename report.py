@@ -6,7 +6,7 @@ from fpdf import FPDF
 def generate_report(results_list, report_type='text', report_file=None):
     """
     Generates and saves a report of the scan results for multiple domains.
-    
+
     :param results_list: A list of dictionaries, each containing the scan data for a domain.
     :param report_type: The format of the report ('text' or 'pdf'). Default is 'text'.
     :param report_file: The name of the report file. If not provided, it will be auto-generated.
@@ -27,7 +27,7 @@ def generate_report(results_list, report_type='text', report_file=None):
 def generate_text_report(results_list, report_file):
     """
     Generates a text report and saves it to a file for multiple domains.
-    
+
     :param results_list: A list of dictionaries, each containing the scan data for a domain.
     :param report_file: The name of the report file.
     :return: The path to the generated report file.
@@ -37,7 +37,7 @@ def generate_text_report(results_list, report_file):
         file.write("=" * 40 + "\n")
         file.write(f"Generated on: {datetime.now()}\n\n")
         
-        for results in results_list:
+        for results in results_list:  # Iterating over each domain's results
             domain_name = results.get("Domain Name", "Unknown_Domain")
             file.write(f"Domain: {domain_name}\n")
             file.write("-" * 40 + "\n")
@@ -60,7 +60,7 @@ def generate_text_report(results_list, report_file):
 def generate_pdf_report(results_list, report_file):
     """
     Generates a PDF report and saves it to a file for multiple domains.
-    
+
     :param results_list: A list of dictionaries, each containing the scan data for a domain.
     :param report_file: The name of the report file.
     :return: The path to the generated report file.
@@ -108,15 +108,23 @@ def generate_pdf_report(results_list, report_file):
 # Example usage within the module (optional)
 if __name__ == "__main__":
     # Example results
-    results = {
-        "Domain Name": "example.com",
-        "IP Address": "93.184.216.34",
-        "Port Status": {"80": "open", "443": "closed"},
-        "HTTP Status": "200 OK"
-    }
+    results_list = [
+        {
+            "Domain Name": "example.com",
+            "IP Address": "93.184.216.34",
+            "Port Status": {"80": "open", "443": "closed"},
+            "HTTP Status": "200 OK"
+        },
+        {
+            "Domain Name": "example.org",
+            "IP Address": "93.184.216.35",
+            "Port Status": {"80": "closed", "443": "open"},
+            "HTTP Status": "301 Moved Permanently"
+        }
+    ]
     
     # Generate text report
-    generate_report([results], report_type='text')
+    generate_report(results_list, report_type='text')
     
     # Generate PDF report
-    generate_report([results], report_type='pdf')
+    generate_report(results_list, report_type='pdf')
