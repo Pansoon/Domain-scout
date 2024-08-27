@@ -12,17 +12,31 @@ def generate_report(results_list, report_type='text', report_file=None):
     :param report_file: The name of the report file. If not provided, it will be auto-generated.
     :return: The path to the generated report file.
     """
+    # Ensure the output directory exists
+    output_dir = 'output'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     
     if report_file is None:
-        report_file = f"scan_report_{timestamp}.{report_type}"
+        report_file = f"scan_report_{timestamp}"
+
+    # Append the correct extension based on the report type
+    if report_type == 'text':
+        report_file += '.txt'
+    elif report_type == 'pdf':
+        report_file += '.pdf'
+    else:
+        raise ValueError(f"Unsupported report type: {report_type}")
+
+    # Prepend the output directory to the report file name
+    report_file = os.path.join(output_dir, report_file)
     
     if report_type == 'text':
         return generate_text_report(results_list, report_file)
     elif report_type == 'pdf':
         return generate_pdf_report(results_list, report_file)
-    else:
-        raise ValueError(f"Unsupported report type: {report_type}")
 
 def generate_text_report(results_list, report_file):
     """
@@ -124,7 +138,7 @@ if __name__ == "__main__":
     ]
     
     # Generate text report
-    generate_report(results_list, report_type='.txt')
+    generate_report(results_list, report_type='text')
     
     # Generate PDF report
     generate_report(results_list, report_type='pdf')

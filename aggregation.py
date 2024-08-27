@@ -29,24 +29,22 @@ def get_http_status_code(url):
         print(f"An error occurred while requesting {url}: {e}")
         return None
 
-def aggregate_results(ip_address, port_status, http_status):
+def aggregate_results(ip_address, port_status, http_status_code):
     """
     Aggregates the results from domain resolution, port scanning, and HTTP status check.
 
     Parameters:
     ip_address (str): The resolved IP address of the domain.
     port_status (dict): A dictionary with ports and their open/closed status.
-    http_status (tuple): A tuple containing the HTTP status code and its description.
+    http_status_code (int): The HTTP status code of the domain.
 
     Returns:
     dict: A dictionary with all the aggregated results.
     """
-    status_code, description = http_status
     return {
         "IP Address": ip_address,
         "Port Status": port_status,
-        "HTTP Status Code": status_code,
-        "HTTP Status Description": description
+        "HTTP Status Code": http_status_code
     }
 
 # Example usage in a main flow
