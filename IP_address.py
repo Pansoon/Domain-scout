@@ -1,6 +1,7 @@
 import socket
 import dns.resolver
 import re
+from urllib.parse import urlparse
 
 def resolve_domain_to_ip(domain_name):
     """
@@ -12,8 +13,15 @@ def resolve_domain_to_ip(domain_name):
     Returns:
     str: The resolved IP address, or None if the domain could not be resolved.
     """
-    # Remove protocol (http:// or https://) from the domain name
-    domain_name = re.sub(r'^https?://', '', domain_name).strip('/')
+    # Use urlparse to extract the netloc (domain) from the URL
+    parsed_url = urlparse(domain_name)
+    if parsed_url.netloc:
+        domain_name = parsed_url.netloc
+    else:
+        domain_name = parsed_url.path
+
+    # Further sanitize to remove any trailing slashes or unwanted characters
+    domain_name = domain_name.strip('/')
 
     # First attempt to resolve using socket
     try:
@@ -45,5 +53,5 @@ def resolve_domain_to_ip(domain_name):
 
 # Example usage
 if __name__ == "__main__":
-    domain_name = "example.com"  # Replace with the domain you want to resolve
+    domain_name = "https://example.com/path?query=1"  # Replace with the domain you want to resolve
     resolve_domain_to_ip(domain_name)
