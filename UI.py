@@ -1,5 +1,9 @@
 import re
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QFileDialog, QRadioButton, QVBoxLayout, QWidget, QHBoxLayout, QMessageBox
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QFileDialog,
+    QRadioButton, QVBoxLayout, QWidget, QHBoxLayout, QMessageBox, QGridLayout, QStatusBar, QAction
+)
+from PyQt5.QtCore import Qt
 from IP_address import resolve_domain_to_ip
 from PORT_scan import scan_ports
 from HTTP_status import get_http_status_code
@@ -15,39 +19,45 @@ class DomainScannerApp(QMainWindow):
         
     def initUI(self):
         self.setWindowTitle("Domain Scanner Tool")
+        self.setGeometry(100, 100, 600, 400)  # Set window size
         
         # Main widget and layout
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         layout = QVBoxLayout(main_widget)
+        
+        # Grid layout for input and options
+        grid_layout = QGridLayout()
+        layout.addLayout(grid_layout)
 
         # Domain Entry
-        domain_label = QLabel("Enter Domain:")
+        domain_label = QLabel("Enter Domain(s):")
+        domain_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        grid_layout.addWidget(domain_label, 0, 0)
         self.entry_domain = QLineEdit()
-        layout.addWidget(domain_label)
-        layout.addWidget(self.entry_domain)
+        grid_layout.addWidget(self.entry_domain, 0, 1)
 
         # Load from File Button
         load_button = QPushButton("Load from File")
         load_button.clicked.connect(self.load_domains_from_file)
-        layout.addWidget(load_button)
+        grid_layout.addWidget(load_button, 0, 2)
 
         # Report Type Option
-        report_type_layout = QHBoxLayout()
         report_type_label = QLabel("Report Type:")
-        report_type_layout.addWidget(report_type_label)
-
+        report_type_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        grid_layout.addWidget(report_type_label, 1, 0)
+        report_type_layout = QHBoxLayout()
         self.report_type_var_text = QRadioButton("Text")
         self.report_type_var_text.setChecked(True)
         self.report_type_var_pdf = QRadioButton("PDF")
         report_type_layout.addWidget(self.report_type_var_text)
         report_type_layout.addWidget(self.report_type_var_pdf)
-        layout.addLayout(report_type_layout)
+        grid_layout.addLayout(report_type_layout, 1, 1)
 
         # Load Config Button
         config_button = QPushButton("Load Config")
         config_button.clicked.connect(self.load_config_file)
-        layout.addWidget(config_button)
+        grid_layout.addWidget(config_button, 1, 2)
 
         # Run Scan Button
         scan_button = QPushButton("Run Scan")
@@ -59,6 +69,20 @@ class DomainScannerApp(QMainWindow):
         self.text_results.setReadOnly(True)
         layout.addWidget(self.text_results)
 
+        # Clear Button
+        clear_button = QPushButton("Clear Results")
+        clear_button.clicked.connect(self.clear_results)
+        layout.addWidget(clear_button)
+
+        # Help Button
+        help_button = QPushButton("Help")
+        help_button.clicked.connect(self.show_help)
+        layout.addWidget(help_button)
+
+        # Status Bar
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        
     def sanitize_domain_name(self, domain):
         return re.sub(r'[\\/:"*?<>|]', '_', domain)
 
@@ -137,11 +161,24 @@ class DomainScannerApp(QMainWindow):
         except Exception as e:
             self.display_error(str(e))
 
+    def clear_results(self):
+        self.text_results.clear()
+        self.display_message("Results cleared.")
+
+    def show_help(self):
+        help_text = ("Enter one or more domain names, separated by commas.\n"
+                     "You can also load a list of domains from a text file.\n"
+                     "Choose the report type (Text or PDF) and click 'Run Scan'.\n"
+                     "Use the 'Clear Results' button to clear the output.")
+        QMessageBox.information(self, "Help", help_text)
+
     def display_message(self, message):
         self.text_results.append(message)
+        self.status_bar.showMessage(message, 5000)  # Show the message in the status bar for 5 seconds
 
     def display_error(self, message):
         QMessageBox.critical(self, "Error", message)
+        self.status_bar.showMessage(f"Error: {message}", 5000)
 
 def main():
     import sys

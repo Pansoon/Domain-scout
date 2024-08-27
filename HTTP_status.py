@@ -1,4 +1,6 @@
 import requests
+import re  # Import the re module for regular expression matching
+from requests.exceptions import RequestException
 
 # Dictionary of common HTTP status codes and their descriptions
 HTTP_STATUS_DESCRIPTIONS = {
@@ -26,16 +28,30 @@ def get_http_status_code(url):
     Returns:
     tuple: A tuple containing the HTTP status code and its description, or (None, None) if the request fails.
     """
+    # Ensure the URL starts with http:// or https://
+    if not re.match(r'^https?://', url):
+        url = 'http://' + url
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    
     try:
-        # Send an HTTP GET request to the URL
-        response = requests.get(url, timeout=5)
+        # First try a HEAD request
+        response = requests.head(url, headers=headers, timeout=5, allow_redirects=True)
+        
+        # If HEAD request fails or returns no content, try a GET request
+        if response.status_code == 405 or not response.ok:
+            response = requests.get(url, headers=headers, timeout=5, allow_redirects=True)
+        
         status_code = response.status_code
         description = HTTP_STATUS_DESCRIPTIONS.get(status_code, "Unknown Status")
         
         # Print and return the HTTP status code and its description
         print(f"HTTP Status Code for {url}: {status_code} ({description})")
         return status_code, description
-    except requests.exceptions.RequestException as e:
+    
+    except RequestException as e:
         # Handle exceptions (e.g., connection errors, timeouts)
         print(f"An error occurred while requesting {url}: {e}")
         return None, None
