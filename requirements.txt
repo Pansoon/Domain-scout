@@ -3,3 +3,4 @@ requests==2.31.0
 dnspython==2.3.0
 PyQt5==5.15.7
 fpdf==1.7.2
+colorama==0.4.6
