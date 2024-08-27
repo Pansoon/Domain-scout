@@ -54,8 +54,10 @@ def load_config_file():
         display_error("No configuration file selected")
 
 def run_scan():
-    global current_config
-    
+    config = load_config_file()
+    if not config:
+        return  # Exit if configuration loading failed
+
     domain_input = entry_domain.get()
     domains = [domain_input] if domain_input else []
 
@@ -80,20 +82,21 @@ def run_scan():
             display_message(f"Resolved IP for {domain}: {ip_address}", Fore.BLACK)
             
             # Step 2: Scan ports with the loaded configuration
-            ports = current_config['ports'] if current_config else [80, 443, 22]
+            ports = config['ports']  # Use ports from configuration
             port_status = scan_ports(ip_address, ports)
             display_message(f"Port scan results for {domain}: {port_status}", Fore.BLACK)
             
-            # Step 3: Get HTTP status code
+            # Step 3: Get HTTP status code and description
             http_status = get_http_status_code(domain)
-            display_message(f"HTTP status code for {domain}: {http_status}", Fore.BLACK)
+            status_code, description = http_status
+            display_message(f"HTTP status for {domain}: {status_code} ({description})", Fore.BLACK)
             
             # Step 4: Aggregate results and include domain name
             results = {
                 "Domain Name": sanitized_domain,
                 "IP Address": ip_address,
                 "Port Status": port_status,
-                "HTTP Status": http_status
+                "HTTP Status": f"{status_code} ({description})"
             }
             
             # Add the results for this domain to the list of all results

@@ -45,10 +45,10 @@ def main_program(domain):
         port_status = scan_ports(ip_address, ports)
         log_action("Port Scanning", f"Ports Scanned: {ports}")
         
-        http_status = get_http_status_code(domain)
-        log_action("HTTP Status Code", f"Status Code: {http_status}")
+        status_code, description = get_http_status_code(domain)
+        log_action("HTTP Status Code", f"Status Code: {status_code}, Description: {description}")
         
-        results = aggregate_results(ip_address, port_status, http_status)
+        results = aggregate_results(ip_address, port_status, (status_code, description))
         
         display_results(results)
         
@@ -78,10 +78,10 @@ def main_program(domains):
             port_status = scan_ports(ip_address, ports)
             log_action("Port Scanning", f"Ports Scanned for {domain}: {ports}")
 
-            http_status = get_http_status_code(f"http://{domain}")
-            log_action("HTTP Status Code", f"Status Code for {domain}: {http_status}")
+            status_code, description = get_http_status_code(f"http://{domain}")
+            log_action("HTTP Status Code", f"Status Code for {domain}: {status_code}, Description: {description}")
 
-            results = aggregate_results(ip_address, port_status, http_status)
+            results = aggregate_results(ip_address, port_status, (status_code, description))
 
             display_results(results)
 
@@ -94,7 +94,6 @@ def main_program(domains):
             handle_error(e)
             log_action("Error", str(e))
             display_error(f"An error occurred with domain {domain}: {e}")
-
 
 if __name__ == "__main__":
     get_user_input(main_program)  # Pass the main_program function to get_user_input
