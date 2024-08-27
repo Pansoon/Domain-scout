@@ -1,15 +1,71 @@
 import re
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QFileDialog,
-    QRadioButton, QVBoxLayout, QWidget, QHBoxLayout, QMessageBox, QGridLayout, QStatusBar, QAction
+    QRadioButton, QVBoxLayout, QWidget, QHBoxLayout, QMessageBox, QGridLayout, QStatusBar
 )
-from PyQt5.QtCore import Qt
-from IP_address import resolve_domain_to_ip
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from IP_address import resolve_domain_to_ip  # Make sure these imports match your project structure
 from PORT_scan import scan_ports
 from HTTP_status import get_http_status_code
-from aggregation import aggregate_results
 from report import generate_report
 from config import load_config
+
+class ScanWorker(QThread):
+    update_status = pyqtSignal(str)
+    finished = pyqtSignal()
+
+    def __init__(self, domains, config):
+        super().__init__()
+        self.domains = domains
+        self.config = config
+
+    def run(self):
+        results_list = []
+
+        try:
+            for domain in self.domains:
+                sanitized_domain = re.sub(r'[\\/:"*?<>|]', '_', domain)
+                self.update_status.emit(f"Starting scan for {domain}...")
+
+                # Step 1: Resolve domain to IP
+                ip_address = resolve_domain_to_ip(domain)
+                if not ip_address:
+                    self.update_status.emit(f"Failed to resolve IP for {domain}.")
+                    continue
+                self.update_status.emit(f"Resolved IP for {domain}: {ip_address}")
+
+                # Step 2: Scan ports with the loaded configuration
+                ports = self.config['ports'] if self.config else [80, 443, 22]
+                port_status = scan_ports(ip_address, ports)
+                self.update_status.emit(f"Port scan results for {domain}: {port_status}")
+
+                # Step 3: Get HTTP status code
+                http_status = get_http_status_code(domain)
+                self.update_status.emit(f"HTTP status code for {domain}: {http_status}")
+
+                # Step 4: Aggregate results
+                results = {
+                    "Domain Name": sanitized_domain,
+                    "IP Address": ip_address,
+                    "Port Status": port_status,
+                    "HTTP Status": http_status
+                }
+
+                results_list.append(results)
+
+            # Step 5: Generate the report
+            if results_list:
+                report_type = 'pdf' if self.config['report_type'] == 'pdf' else 'text'
+                generate_report(results_list, report_type=report_type)
+                self.update_status.emit(f"Report generated successfully.")
+            else:
+                self.update_status.emit("No valid results to report.")
+
+        except Exception as e:
+            self.update_status.emit(f"An error occurred: {str(e)}")
+
+        self.finished.emit()  # Signal that the thread is finished
+
 
 class DomainScannerApp(QMainWindow):
     def __init__(self):
@@ -82,9 +138,6 @@ class DomainScannerApp(QMainWindow):
         # Status Bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        
-    def sanitize_domain_name(self, domain):
-        return re.sub(r'[\\/:"*?<>|]', '_', domain)
 
     def load_domains_from_file(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Open Domain File", "", "Text files (*.txt)")
@@ -111,55 +164,31 @@ class DomainScannerApp(QMainWindow):
             self.display_error("No configuration file selected")
 
     def run_scan(self):
-        domain_input = self.entry_domain.text().strip()
-        domains = [domain.strip() for domain in domain_input.split(',')]  # Support multiple domains in a comma-separated list
+        # Ensure that the configuration is initialized
+        if self.current_config is None:
+            self.current_config = {
+                'ports': [80, 443, 22],  # Default ports to scan
+                'report_type': 'text'  # Default report type
+            }
 
+        # Collect domain inputs and configuration
+        domain_input = self.entry_domain.text().strip()
+        domains = [domain.strip() for domain in domain_input.split(',')]  # Support multiple domains
         if not domains:
             self.display_error("No domains provided.")
             return
 
-        results_list = []
+        report_type = 'pdf' if self.report_type_var_pdf.isChecked() else 'text'
+        self.current_config['report_type'] = report_type
 
-        try:
-            for domain in domains:
-                sanitized_domain = self.sanitize_domain_name(domain)
+        # Start the background scan worker
+        self.worker = ScanWorker(domains, self.current_config)
+        self.worker.update_status.connect(self.display_message)
+        self.worker.finished.connect(self.scan_finished)
+        self.worker.start()
 
-                # Step 1: Resolve domain to IP
-                ip_address = resolve_domain_to_ip(domain)
-                if not ip_address:
-                    self.display_error(f"Failed to resolve IP for {domain}.")
-                    continue
-                self.display_message(f"Resolved IP for {domain}: {ip_address}")
-
-                # Step 2: Scan ports with the loaded configuration
-                ports = self.current_config['ports'] if self.current_config else [80, 443, 22]
-                port_status = scan_ports(ip_address, ports)
-                self.display_message(f"Port scan results for {domain}: {port_status}")
-
-                # Step 3: Get HTTP status code
-                http_status = get_http_status_code(domain)
-                self.display_message(f"HTTP status code for {domain}: {http_status}")
-
-                # Step 4: Aggregate results
-                results = {
-                    "Domain Name": sanitized_domain,
-                    "IP Address": ip_address,
-                    "Port Status": port_status,
-                    "HTTP Status": http_status
-                }
-
-                results_list.append(results)  # Add the current domain's results to the list
-
-            # Step 5: Display and generate report for all results
-            if results_list:
-                report_type = 'pdf' if self.report_type_var_pdf.isChecked() else 'text'
-                generate_report(results_list, report_type=report_type)
-                self.display_message(f"Report generated as {report_type} format for all domains.")
-            else:
-                self.display_error("No valid results to report.")
-
-        except Exception as e:
-            self.display_error(str(e))
+    def scan_finished(self):
+        self.display_message("Scan completed.")
 
     def clear_results(self):
         self.text_results.clear()
