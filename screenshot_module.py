@@ -33,8 +33,8 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
     driver = None  # Initialize the driver to None
 
     try:
-        # Get the correct chromedriver path manually for version 114
-        chrome_install = ChromeDriverManager(version="114.0.5735.90").install()  # Lock the ChromeDriver version
+        # Get the correct ChromeDriver version 114
+        chrome_install = ChromeDriverManager().install(version="114.0.5735.90")  # Lock the ChromeDriver version
         folder = os.path.dirname(chrome_install)
         chromedriver_path = os.path.join(folder, "chromedriver.exe")
         print(f"Using chromedriver from: {chromedriver_path}")
@@ -65,4 +65,4 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
 # Example usage
 if __name__ == "__main__":
     # Example domain screenshot capture with a self-signed certificate
-    capture_domain_screenshot("https://self-signed.badssl.com")
+    capture_domain_screenshot("https://www.google.com")
