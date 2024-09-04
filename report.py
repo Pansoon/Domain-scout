@@ -1,11 +1,11 @@
 import os
 from datetime import datetime
 from fpdf import FPDF
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 def generate_report(results_list, report_type='text', report_file=None):
     """
-    Generates and saves a report of the scan results for multiple domains.
+    Generates and saves a report of the scan results for multiple domains, including screenshots.
 
     :param results_list: A list of dictionaries, each containing the scan data for a domain.
     :param report_type: The format of the report ('text' or 'pdf'). Default is 'text'.
@@ -40,7 +40,7 @@ def generate_report(results_list, report_type='text', report_file=None):
 
 def generate_text_report(results_list, report_file):
     """
-    Generates a text report and saves it to a file for multiple domains.
+    Generates a text report and saves it to a file for multiple domains, including screenshot paths.
 
     :param results_list: A list of dictionaries, each containing the scan data for a domain.
     :param report_file: The name of the report file.
@@ -67,6 +67,10 @@ def generate_text_report(results_list, report_file):
                     else:
                         file.write(f"  {value}\n")
                 file.write("\n")
+
+            # Include the screenshot path in the text report
+            screenshot = results.get("Screenshot", "No screenshot available")
+            file.write(f"Screenshot: {screenshot}\n")
             
             file.write("=" * 40 + "\n\n")
         
@@ -81,7 +85,7 @@ def generate_text_report(results_list, report_file):
 
 def generate_pdf_report(results_list, report_file):
     """
-    Generates a PDF report and saves it to a file for multiple domains.
+    Generates a PDF report and saves it to a file for multiple domains, embedding screenshots.
 
     :param results_list: A list of dictionaries, each containing the scan data for a domain.
     :param report_file: The name of the report file.
@@ -148,7 +152,21 @@ def generate_pdf_report(results_list, report_file):
 
         pdf.cell(200, 10, txt=f"HTTP Status: {http_status}", ln=True, align="L")
         pdf.ln(10)
-        
+
+        # Embed Screenshot into PDF if it exists
+        screenshot = results.get("Screenshot")
+        if screenshot and os.path.exists(screenshot):
+            pdf.set_font("Arial", 'B', size=12)
+            pdf.cell(200, 10, txt="Screenshot:", ln=True, align="L")
+            pdf.ln(5)
+
+            # Insert the screenshot image into the PDF
+            pdf.image(screenshot, x=10, w=190)  # Adjust the size as needed
+            pdf.ln(10)
+        else:
+            pdf.cell(200, 10, txt="No screenshot available", ln=True, align="L")
+            pdf.ln(10)
+
         # Separator between domains
         pdf.cell(200, 0, '', 'T', ln=True, align="C")  # Draw a horizontal line
         pdf.ln(10)
@@ -218,19 +236,22 @@ if __name__ == "__main__":
             "Domain Name": "example.com",
             "IP Address": "93.184.216.34",
             "Port Status": {"80": "open", "443": "closed"},
-            "HTTP Status": "200 OK"
+            "HTTP Status": "200 OK",
+            "Screenshot": "screenshots/example_com.png"
         },
         {
             "Domain Name": "example.org",
             "IP Address": "93.184.216.35",
             "Port Status": {"80": "closed", "443": "open"},
-            "HTTP Status": "301 Moved Permanently"
+            "HTTP Status": "301 Moved Permanently",
+            "Screenshot": "screenshots/example_org.png"
         },
         {
             "Domain Name": "example.net",
             "IP Address": "93.184.216.34",  # Same IP as example.com
             "Port Status": {"80": "open", "443": "open"},
-            "HTTP Status": "404 Not Found"
+            "HTTP Status": "404 Not Found",
+            "Screenshot": "screenshots/example_net.png"
         }
     ]
     

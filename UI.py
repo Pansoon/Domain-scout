@@ -9,6 +9,8 @@ from PORT_scan import scan_ports
 from HTTP_status import get_http_status_code
 from report import generate_report
 from config import load_config
+from screenshot_module import capture_domain_screenshot
+
 
 class ScanWorker(QThread):
     update_status = pyqtSignal(str)
@@ -21,7 +23,7 @@ class ScanWorker(QThread):
 
     def run(self):
         results_list = []
-        
+
         try:
             for domain in self.domains:
                 sanitized_domain = re.sub(r'[\\/:"*?<>|]', '_', domain)
@@ -31,6 +33,7 @@ class ScanWorker(QThread):
                 http_status = "N/A"
                 ip_address = None
                 port_status = {}
+                screenshot_path = None
 
                 # Step 1: Resolve domain to IP
                 try:
@@ -62,18 +65,26 @@ class ScanWorker(QThread):
                     self.update_status.emit(f"Failed to retrieve HTTP status for {domain}: {str(e)}")
                     http_status = "N/A"
 
-                # Step 4: Aggregate results
+                # Step 4: Capture a screenshot of the domain
+                try:
+                    screenshot_path = capture_domain_screenshot(domain)
+                    self.update_status.emit(f"Screenshot captured for {domain}. Saved to: {screenshot_path}")
+                except Exception as e:
+                    self.update_status.emit(f"Failed to capture screenshot for {domain}: {str(e)}")
+
+                # Step 5: Aggregate results including screenshot path
                 results = {
                     "Domain Name": sanitized_domain,
                     "IP Address": ip_address,
                     "Port Status": port_status,
-                    "HTTP Status": http_status
+                    "HTTP Status": http_status,
+                    "Screenshot": screenshot_path
                 }
 
                 results_list.append(results)
                 self.update_status.emit(f"Aggregated results for {domain}")
 
-            # Step 5: Generate the report
+            # Step 6: Generate the report
             if results_list:
                 try:
                     report_type = 'pdf' if self.config.get('report_type') == 'pdf' else 'text'
