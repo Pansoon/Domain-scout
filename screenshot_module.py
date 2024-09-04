@@ -33,8 +33,8 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
     driver = None  # Initialize the driver to None
 
     try:
-        # Get the correct chromedriver path manually
-        chrome_install = ChromeDriverManager().install()
+        # Get the correct chromedriver path manually for version 114
+        chrome_install = ChromeDriverManager(version="114.0.5735.90").install()  # Lock the ChromeDriver version
         folder = os.path.dirname(chrome_install)
         chromedriver_path = os.path.join(folder, "chromedriver.exe")
         print(f"Using chromedriver from: {chromedriver_path}")
