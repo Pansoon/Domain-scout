@@ -135,6 +135,17 @@ def generate_pdf_report(results_list, report_file):
         # HTTP Status
         http_status = results.get("HTTP Status", "N/A")
         pdf.set_font("Arial", 'B', size=12)
+
+        # Determine color based on HTTP status
+        if "200" in http_status:
+            pdf.set_text_color(0, 128, 0)  # Green for 200 OK
+        elif "404" in http_status:
+            pdf.set_text_color(255, 0, 0)  # Red for 404 Not Found
+        elif http_status == "N/A":
+            pdf.set_text_color(128, 128, 128)  # Gray for N/A
+        else:
+            pdf.set_text_color(0, 0, 0)  # Default color for other statuses
+
         pdf.cell(200, 10, txt=f"HTTP Status: {http_status}", ln=True, align="L")
         pdf.ln(10)
         

@@ -21,27 +21,46 @@ class ScanWorker(QThread):
 
     def run(self):
         results_list = []
-
+        
         try:
             for domain in self.domains:
                 sanitized_domain = re.sub(r'[\\/:"*?<>|]', '_', domain)
                 self.update_status.emit(f"Starting scan for {domain}...")
 
+                # Initialize variables to ensure they are always defined
+                http_status = "N/A"
+                ip_address = None
+                port_status = {}
+
                 # Step 1: Resolve domain to IP
-                ip_address = resolve_domain_to_ip(domain)
-                if not ip_address:
-                    self.update_status.emit(f"Failed to resolve IP for {domain}.")
+                try:
+                    ip_address = resolve_domain_to_ip(domain)
+                    if not ip_address:
+                        self.update_status.emit(f"Failed to resolve IP for {domain}.")
+                        continue
+                    self.update_status.emit(f"Resolved IP for {domain}: {ip_address}")
+                except Exception as e:
+                    self.update_status.emit(f"Error resolving IP for {domain}: {str(e)}")
                     continue
-                self.update_status.emit(f"Resolved IP for {domain}: {ip_address}")
 
                 # Step 2: Scan ports with the loaded configuration
-                ports = self.config['ports'] if self.config else [80, 443, 22]
-                port_status = scan_ports(ip_address, ports)
-                self.update_status.emit(f"Port scan results for {domain}: {port_status}")
+                try:
+                    ports = self.config.get('ports', [80, 443, 22])
+                    port_status = scan_ports(ip_address, ports)
+                    self.update_status.emit(f"Port scan results for {domain}: {port_status}")
+                except Exception as e:
+                    self.update_status.emit(f"Error scanning ports for {domain}: {str(e)}")
+                    port_status = {}
 
                 # Step 3: Get HTTP status code
-                http_status = get_http_status_code(domain)
-                self.update_status.emit(f"HTTP status code for {domain}: {http_status}")
+                try:
+                    http_status = get_http_status_code(domain)
+                    if http_status is None:
+                        http_status = "N/A"  # Default to "N/A" if None
+                    self.update_status.emit(f"HTTP status code for {domain}: {http_status}")
+                except Exception as e:
+                    self.update_status.emit(f"Failed to retrieve HTTP status for {domain}: {str(e)}")
+                    http_status = "N/A"
 
                 # Step 4: Aggregate results
                 results = {
@@ -52,25 +71,29 @@ class ScanWorker(QThread):
                 }
 
                 results_list.append(results)
+                self.update_status.emit(f"Aggregated results for {domain}")
 
             # Step 5: Generate the report
             if results_list:
-                report_type = 'pdf' if self.config['report_type'] == 'pdf' else 'text'
-                generate_report(results_list, report_type=report_type)
-                self.update_status.emit(f"Report generated successfully.")
+                try:
+                    report_type = 'pdf' if self.config.get('report_type') == 'pdf' else 'text'
+                    generate_report(results_list, report_type=report_type)
+                    self.update_status.emit(f"Report generated successfully.")
+                except Exception as e:
+                    self.update_status.emit(f"Failed to generate report: {str(e)}")
             else:
                 self.update_status.emit("No valid results to report.")
 
         except Exception as e:
-            self.update_status.emit(f"An error occurred: {str(e)}")
+            self.update_status.emit(f"An unexpected error occurred: {str(e)}")
 
         self.finished.emit()  # Signal that the thread is finished
-
 
 class DomainScannerApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.current_config = None
+        self.worker = None  # Track the worker thread
         self.initUI()
         
     def initUI(self):
@@ -173,9 +196,21 @@ class DomainScannerApp(QMainWindow):
 
         # Collect domain inputs and configuration
         domain_input = self.entry_domain.text().strip()
-        domains = [domain.strip() for domain in domain_input.split(',')]  # Support multiple domains
-        if not domains:
+
+        # Ensure domain_input is a string
+        if not isinstance(domain_input, str):
+            self.display_error("Invalid input: Expected a string for domains.")
+            return
+
+        # Support multiple domains, split by comma
+        domains = [domain.strip() for domain in domain_input.split(',')]
+        if not domains or domains == ['']:
             self.display_error("No domains provided.")
+            return
+
+        # Prevent starting another scan while one is running
+        if self.worker and self.worker.isRunning():
+            self.display_message("A scan is already in progress. Please wait.")
             return
 
         report_type = 'pdf' if self.report_type_var_pdf.isChecked() else 'text'
@@ -185,7 +220,12 @@ class DomainScannerApp(QMainWindow):
         self.worker = ScanWorker(domains, self.current_config)
         self.worker.update_status.connect(self.display_message)
         self.worker.finished.connect(self.scan_finished)
+        self.worker.finished.connect(self.cleanup_thread)  # Connect to cleanup function
         self.worker.start()
+
+    def cleanup_thread(self):
+        """Cleanup the thread after it finishes to prevent dangling threads."""
+        self.worker = None
 
     def scan_finished(self):
         self.display_message("Scan completed.")
