@@ -69,3 +69,48 @@ Automated IP, port, and HTTP status scanning from domains, complete with reporti
    - **Implementation**: Generates text or PDF reports using libraries like `fpdf` or saving to `.txt`.
    - **Core Function**:
      - `generate_report(results)`: Saves the results in a formatted report.
+
+# Domain Scanner Program
+
+## How to Use the Program
+
+### Step 1: Open the Program
+1. Navigate to the program's folder directory using the terminal or file explorer.
+2. You can launch the program in two ways:
+   - **Recommended**: Run the program using the command line by entering:
+     ```bash
+     python main.py
+     ```
+   - **Alternative**: Open the program via the graphical interface by running:
+     ```bash
+     python UI.py
+     ```
+
+### Step 2: Input Domains to Scan
+- If you want to scan **a single domain**:
+  - Simply enter the domain name in the provided box in the UI.
+- If you want to scan **multiple domains at once**:
+  - Create a list of domains in a Notepad file in the following format:
+    ```txt
+    1. example.com
+    2. google.com
+    3. etc.
+    4. etc.
+    ```
+  - Save the file and load it into the program when prompted.
+
+### Step 3: Start Scanning
+1. Once the domains are entered or the file is loaded, choose the **"Text to scan"** option.
+2. The program will begin scanning the domains, resolving IP addresses, checking open ports, and retrieving HTTP status codes.
+
+### Step 4: Select Output Format
+- After the scan completes, choose the output format:
+  - **PDF** (Recommended)
+  - **Text**
+
+### Step 5: Access the Output
+- The output report will be saved in the `output` folder located inside the program's directory.
+- Review the report for detailed results on domain resolution, port status, and HTTP status codes.
+
+### Summary
+The program allows efficient scanning of domains and provides comprehensive results in both PDF and text formats. All outputs are conveniently saved for further review.
