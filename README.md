@@ -92,10 +92,10 @@ Automated IP, port, and HTTP status scanning from domains, complete with reporti
 - If you want to scan **multiple domains at once**:
   - Create a list of domains in a Notepad file in the following format:
     ```txt
-    1. example.com
-    2. google.com
-    3. etc.
-    4. etc.
+    example.com
+    google.com
+    etc.
+    etc.
     ```
   - Save the file and load it into the program when prompted.
 
@@ -111,6 +111,3 @@ Automated IP, port, and HTTP status scanning from domains, complete with reporti
 ### Step 5: Access the Output
 - The output report will be saved in the `output` folder located inside the program's directory.
 - Review the report for detailed results on domain resolution, port status, and HTTP status codes.
-
-### Summary
-The program allows efficient scanning of domains and provides comprehensive results in both PDF and text formats. All outputs are conveniently saved for further review.
