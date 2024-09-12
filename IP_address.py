@@ -11,8 +11,10 @@ def resolve_domain_to_ip(domain_name):
     domain_name (str): The domain name or URL to resolve.
 
     Returns:
-    str: The resolved IP address, or None if the domain could not be resolved.
+    str: The resolved IP address, or a string indicating the domain is closed, or None if the domain could not be resolved.
     """
+    closed_domain = "CLOSED_DOMAIN"  # Define a specific return value for closed/unreachable domains
+
     # Use urlparse to extract the netloc (domain) from the URL
     parsed_url = urlparse(domain_name)
     if parsed_url.netloc:
@@ -42,6 +44,7 @@ def resolve_domain_to_ip(domain_name):
         return ip_address
     except dns.resolver.NXDOMAIN:
         print(f"Domain does not exist: {domain_name}")
+        return closed_domain  # Return closed_domain for non-existent domains
     except dns.resolver.Timeout:
         print(f"Timeout while resolving domain: {domain_name}")
     except dns.resolver.NoNameservers:
@@ -54,4 +57,5 @@ def resolve_domain_to_ip(domain_name):
 # Example usage
 if __name__ == "__main__":
     domain_name = "https://example.com/path?query=1"  # Replace with the domain you want to resolve
-    resolve_domain_to_ip(domain_name)
+    result = resolve_domain_to_ip(domain_name)
+    print(f"Result: {result}")

@@ -188,32 +188,48 @@ def generate_pdf_report(results_list, report_file):
 def summarize_results(results_list):
     """
     Summarizes the scan results, categorizing by HTTP status, listing domains, and separating unique and repeated IPs.
+    Includes closed or unresponsive domains.
 
     :param results_list: A list of dictionaries, each containing the scan data for a domain.
     :return: A list of summary lines.
     """
     http_statuses = defaultdict(list)
     ip_addresses = defaultdict(list)
+    closed_domains = []
 
     for result in results_list:
-        http_status = result.get("HTTP Status", "N/A")
         domain_name = result.get("Domain Name", "Unknown Domain")
         ip_address = result.get("IP Address", "N/A")
-        
-        http_statuses[http_status].append(domain_name)
-        ip_addresses[ip_address].append(domain_name)
+        http_status = result.get("HTTP Status", "N/A")
+
+        # If no valid HTTP status or if the domain is considered closed, add to closed_domains
+        if http_status == "N/A" or not result.get("Port Status", {}):
+            closed_domains.append(domain_name)
+        else:
+            http_statuses[http_status].append(domain_name)
+            ip_addresses[ip_address].append(domain_name)
 
     summary = [
         f"Total Domains Scanned: {len(results_list)}",
         "=" * 40,
     ]
     
+    # Summary of HTTP statuses
     for status, domains in http_statuses.items():
         summary.append(f"HTTP Status '{status}': {len(domains)} site(s)")
         for domain in domains:
             summary.append(f"  - {domain}")
 
+    # Summary for closed/no-response domains
+    if closed_domains:
+        summary.append("=" * 40)
+        summary.append(f"Closed/No Response Domains ({len(closed_domains)}):")
+        for domain in closed_domains:
+            summary.append(f"  - {domain}")
+
     summary.append("=" * 40)
+
+    # Summary of unique and repeated IPs
     unique_ips = [ip for ip, domains in ip_addresses.items() if len(domains) == 1]
     repeated_ips = {ip: domains for ip, domains in ip_addresses.items() if len(domains) > 1}
 

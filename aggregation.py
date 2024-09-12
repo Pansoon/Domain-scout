@@ -1,6 +1,4 @@
 import requests
-
-import requests
 import re
 
 def get_http_status_code(url):

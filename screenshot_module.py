@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+import time
 import os
 
 def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_file=None):
@@ -33,20 +34,25 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
     driver = None  # Initialize the driver to None
 
     try:
-        # Get the correct ChromeDriver version 114
-        chrome_install = ChromeDriverManager().install(version="114.0.5735.90")  # Lock the ChromeDriver version
+        # Manually specify a compatible ChromeDriver version
+        chrome_install = ChromeDriverManager().install()
+
+        # Get the folder where ChromeDriver is installed
         folder = os.path.dirname(chrome_install)
         chromedriver_path = os.path.join(folder, "chromedriver.exe")
         print(f"Using chromedriver from: {chromedriver_path}")
 
         # Construct the service with the correct chromedriver.exe path
-        service = ChromeService(chromedriver_path)
+        service = ChromeService(executable_path=chromedriver_path)
 
         # Initialize Chrome WebDriver with the service and options
         driver = webdriver.Chrome(service=service, options=chrome_options)
 
         # Load the domain URL
         driver.get(domain_url)
+
+        # Wait for the page to load completely (you can adjust the time as needed)
+        time.sleep(2)
 
         # Capture the screenshot and save it
         driver.save_screenshot(screenshot_path)
@@ -62,7 +68,11 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
 
     return screenshot_path
 
-# Example usage
+# Example usage: Capture screenshots for multiple domains
 if __name__ == "__main__":
-    # Example domain screenshot capture with a self-signed certificate
-    capture_domain_screenshot("https://www.google.com")
+    # List of domains to capture screenshots from
+    domains = ["https://www.google.com", "https://www.fla-sh.cc", "https://www.example.com"]
+
+    for domain in domains:
+        capture_domain_screenshot(domain)
+        time.sleep(1)  # Add a short delay between screenshots
