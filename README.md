@@ -1,7 +1,3 @@
-Certainly! Here's a polished version of your README.md content:
-
----
-
 # IP-Scan
 
 Automated IP, port, and HTTP status scanning from domains, complete with reporting capabilities and a user-friendly GUI.
