@@ -4,14 +4,22 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
+import json
 
-def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_file=None):
+# User-Agent strings for different devices
+USER_AGENTS = {
+    'android': 'Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.5481.77 Mobile Safari/537.36',
+    'apple': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
+}
+
+def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_file=None, device='android'):
     """
-    Captures a screenshot of the given domain using Selenium, allowing for SSL certificate errors.
+    Captures a screenshot of the given domain, automatically adjusting headers, referer, and acting like a real browser.
     
     :param domain_url: URL of the domain to capture.
     :param output_dir: Directory to save the screenshots (default: 'screenshots').
     :param screenshot_file: The name of the screenshot file. If None, defaults to the domain name as file name.
+    :param device: The device type to simulate ('android' or 'apple').
     :return: The path to the saved screenshot.
     """
     # Ensure output directory exists
@@ -23,7 +31,7 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
 
     screenshot_path = os.path.join(output_dir, screenshot_file)
 
-    # Set up Chrome options to ignore SSL certificate errors
+    # Set up Chrome options to ignore SSL certificate errors and set user-agent
     chrome_options = Options()
     chrome_options.add_argument("--headless")  # Run browser in headless mode
     chrome_options.add_argument("--disable-gpu")
@@ -31,28 +39,53 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.set_capability("acceptInsecureCerts", True)  # Allow insecure SSL certificates
 
+    # Set the user-agent based on the selected device
+    user_agent = USER_AGENTS.get(device.lower(), USER_AGENTS['android'])  # Default to Android if not specified
+    chrome_options.add_argument(f"user-agent={user_agent}")
+
     driver = None  # Initialize the driver to None
 
     try:
-        # Manually specify a compatible ChromeDriver version
+        # Install ChromeDriver
         chrome_install = ChromeDriverManager().install()
-
-        # Get the folder where ChromeDriver is installed
         folder = os.path.dirname(chrome_install)
         chromedriver_path = os.path.join(folder, "chromedriver.exe")
-        print(f"Using chromedriver from: {chromedriver_path}")
 
-        # Construct the service with the correct chromedriver.exe path
+        # Set up Chrome service
         service = ChromeService(executable_path=chromedriver_path)
 
         # Initialize Chrome WebDriver with the service and options
         driver = webdriver.Chrome(service=service, options=chrome_options)
 
+        # Use CDP to monitor and capture network traffic for dynamic headers
+        driver.execute_cdp_cmd('Network.enable', {})
+
+        def capture_request_headers():
+            """Capture dynamic headers including referer, user-agent, etc."""
+            logs = driver.execute_cdp_cmd('Network.getResponseBodyForInterception', {})
+            return logs
+
+        driver.execute_cdp_cmd('Network.setExtraHTTPHeaders', {"headers": {
+            "Sec-Ch-Ua": '"Chromium";v="127", "Not)A;Brand";v="99"',
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Ch-Ua-Mobile": '?0'
+        }})
+
         # Load the domain URL
         driver.get(domain_url)
 
-        # Wait for the page to load completely (you can adjust the time as needed)
-        time.sleep(2)
+        # Wait for the page to load completely
+        time.sleep(4)
+
+        # Check if the URL was redirected and wait for the final page to load
+        final_url = driver.current_url
+        if final_url != domain_url:
+            print(f"Redirected from {domain_url} to {final_url}")
+            time.sleep(2)  # Wait for the redirected page to fully load
+
+        # Capture the dynamic headers and referer
+        headers = capture_request_headers()
+        print("Captured Headers:", json.dumps(headers, indent=4))
 
         # Capture the screenshot and save it
         driver.save_screenshot(screenshot_path)
@@ -68,11 +101,16 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
 
     return screenshot_path
 
-# Example usage: Capture screenshots for multiple domains
+# Example usage: Capture screenshots for multiple domains with different devices
 if __name__ == "__main__":
     # List of domains to capture screenshots from
-    domains = ["https://www.google.com", "https://www.fla-sh.cc", "https://www.example.com"]
+    domains = ["https://www.fla-sh.cc"]
 
     for domain in domains:
-        capture_domain_screenshot(domain)
+        # Capture screenshot as Samsung Galaxy S23 (Android)
+        capture_domain_screenshot(domain, device='android')
+        time.sleep(1)  # Add a short delay between screenshots
+        
+        # Capture screenshot as iPhone (Apple)
+        capture_domain_screenshot(domain, device='apple')
         time.sleep(1)  # Add a short delay between screenshots

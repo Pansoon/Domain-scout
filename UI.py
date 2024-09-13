@@ -16,10 +16,11 @@ class ScanWorker(QThread):
     update_status = pyqtSignal(str)
     finished = pyqtSignal()
 
-    def __init__(self, domains, config):
+    def __init__(self, domains, config, headless):
         super().__init__()
         self.domains = domains
         self.config = config
+        self.headless = headless  # Headless (fast scan) or full browser (detailed scan)
 
     def run(self):
         results_list = []
@@ -46,7 +47,7 @@ class ScanWorker(QThread):
                     self.update_status.emit(f"Error resolving IP for {domain}: {str(e)}")
                     continue
 
-                # Step 2: Scan ports with the loaded configuration
+                # Step 2: Scan ports
                 try:
                     ports = self.config.get('ports', [80, 443, 22])
                     port_status = scan_ports(ip_address, ports)
@@ -59,7 +60,7 @@ class ScanWorker(QThread):
                 try:
                     http_status = get_http_status_code(domain)
                     if http_status is None:
-                        http_status = "N/A"  # Default to "N/A" if None
+                        http_status = "N/A"
                     self.update_status.emit(f"HTTP status code for {domain}: {http_status}")
                 except Exception as e:
                     self.update_status.emit(f"Failed to retrieve HTTP status for {domain}: {str(e)}")
@@ -67,12 +68,14 @@ class ScanWorker(QThread):
 
                 # Step 4: Capture a screenshot of the domain
                 try:
-                    screenshot_path = capture_domain_screenshot(domain)
-                    self.update_status.emit(f"Screenshot captured for {domain}. Saved to: {screenshot_path}")
+                    # Headless mode for fast scan, full browser for detailed scan
+                    screenshot_path = capture_domain_screenshot(domain, headless=self.headless)
+                    mode = "headless" if self.headless else "full browser mode"
+                    self.update_status.emit(f"Screenshot captured for {domain} in {mode}. Saved to: {screenshot_path}")
                 except Exception as e:
                     self.update_status.emit(f"Failed to capture screenshot for {domain}: {str(e)}")
 
-                # Step 5: Aggregate results including screenshot path
+                # Step 5: Aggregate results
                 results = {
                     "Domain Name": sanitized_domain,
                     "IP Address": ip_address,
@@ -98,7 +101,7 @@ class ScanWorker(QThread):
         except Exception as e:
             self.update_status.emit(f"An unexpected error occurred: {str(e)}")
 
-        self.finished.emit()  # Signal that the thread is finished
+        self.finished.emit()
 
 class DomainScannerApp(QMainWindow):
     def __init__(self):
