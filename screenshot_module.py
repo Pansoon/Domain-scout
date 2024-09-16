@@ -12,7 +12,7 @@ USER_AGENTS = {
     'apple': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
 }
 
-def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_file=None, device='android'):
+def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_file=None, device='android', headless=True):
     """
     Captures a screenshot of the given domain, automatically adjusting headers, referer, and acting like a real browser.
     
@@ -20,6 +20,7 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
     :param output_dir: Directory to save the screenshots (default: 'screenshots').
     :param screenshot_file: The name of the screenshot file. If None, defaults to the domain name as file name.
     :param device: The device type to simulate ('android' or 'apple').
+    :param headless: Whether to run the browser in headless mode (default: True).
     :return: The path to the saved screenshot.
     """
     # Ensure output directory exists
@@ -33,7 +34,8 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
 
     # Set up Chrome options to ignore SSL certificate errors and set user-agent
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Run browser in headless mode
+    if headless:
+        chrome_options.add_argument("--headless")  # Run browser in headless mode if enabled
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--window-size=1920,1080")
@@ -48,11 +50,9 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
     try:
         # Install ChromeDriver
         chrome_install = ChromeDriverManager().install()
-        folder = os.path.dirname(chrome_install)
-        chromedriver_path = os.path.join(folder, "chromedriver.exe")
 
-        # Set up Chrome service
-        service = ChromeService(executable_path=chromedriver_path)
+        # Use platform-independent path handling for ChromeDriver
+        service = ChromeService(executable_path=chrome_install)
 
         # Initialize Chrome WebDriver with the service and options
         driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -108,9 +108,9 @@ if __name__ == "__main__":
 
     for domain in domains:
         # Capture screenshot as Samsung Galaxy S23 (Android)
-        capture_domain_screenshot(domain, device='android')
+        capture_domain_screenshot(domain, device='android', headless=True)  # Fast Scan (Headless)
         time.sleep(1)  # Add a short delay between screenshots
         
         # Capture screenshot as iPhone (Apple)
-        capture_domain_screenshot(domain, device='apple')
+        capture_domain_screenshot(domain, device='apple', headless=False)  # Detailed Scan (Full Browser)
         time.sleep(1)  # Add a short delay between screenshots

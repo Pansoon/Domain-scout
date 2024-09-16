@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QRadioButton, QVBoxLayout, QWidget, QHBoxLayout, QMessageBox, QGridLayout, QStatusBar
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from IP_address import resolve_domain_to_ip  # Make sure these imports match your project structure
+from IP_address import resolve_domain_to_ip
 from PORT_scan import scan_ports
 from HTTP_status import get_http_status_code
 from report import generate_report
@@ -103,22 +103,23 @@ class ScanWorker(QThread):
 
         self.finished.emit()
 
+
 class DomainScannerApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.current_config = None
         self.worker = None  # Track the worker thread
         self.initUI()
-        
+
     def initUI(self):
         self.setWindowTitle("Domain Scanner Tool")
         self.setGeometry(100, 100, 600, 400)  # Set window size
-        
+
         # Main widget and layout
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         layout = QVBoxLayout(main_widget)
-        
+
         # Grid layout for input and options
         grid_layout = QGridLayout()
         layout.addLayout(grid_layout)
@@ -152,10 +153,14 @@ class DomainScannerApp(QMainWindow):
         config_button.clicked.connect(self.load_config_file)
         grid_layout.addWidget(config_button, 1, 2)
 
-        # Run Scan Button
-        scan_button = QPushButton("Run Scan")
-        scan_button.clicked.connect(self.run_scan)
-        layout.addWidget(scan_button)
+        # Fast Scan and Detailed Scan Buttons
+        self.fast_scan_button = QPushButton("Fast Scan")
+        self.fast_scan_button.clicked.connect(self.start_fast_scan)
+        layout.addWidget(self.fast_scan_button)
+
+        self.detailed_scan_button = QPushButton("Detailed Scan")
+        self.detailed_scan_button.clicked.connect(self.start_detailed_scan)
+        layout.addWidget(self.detailed_scan_button)
 
         # Results Display
         self.text_results = QTextEdit()
@@ -200,7 +205,13 @@ class DomainScannerApp(QMainWindow):
         else:
             self.display_error("No configuration file selected")
 
-    def run_scan(self):
+    def start_fast_scan(self):
+        self.run_scan(headless=True)
+
+    def start_detailed_scan(self):
+        self.run_scan(headless=False)
+
+    def run_scan(self, headless):
         # Ensure that the configuration is initialized
         if self.current_config is None:
             self.current_config = {
@@ -231,7 +242,7 @@ class DomainScannerApp(QMainWindow):
         self.current_config['report_type'] = report_type
 
         # Start the background scan worker
-        self.worker = ScanWorker(domains, self.current_config)
+        self.worker = ScanWorker(domains, self.current_config, headless=headless)
         self.worker.update_status.connect(self.display_message)
         self.worker.finished.connect(self.scan_finished)
         self.worker.finished.connect(self.cleanup_thread)  # Connect to cleanup function
@@ -263,12 +274,14 @@ class DomainScannerApp(QMainWindow):
         QMessageBox.critical(self, "Error", message)
         self.status_bar.showMessage(f"Error: {message}", 5000)
 
+
 def main():
     import sys
     app = QApplication(sys.argv)
     scanner_app = DomainScannerApp()
     scanner_app.show()
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     main()

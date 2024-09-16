@@ -1,0 +1,61 @@
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output
+import plotly.express as px
+import pandas as pd
+
+# Initialize the Dash app
+app = dash.Dash(__name__)
+
+# Sample data
+df = pd.DataFrame({
+    "Category": ["A", "B", "C", "D"],
+    "Values": [10, 20, 15, 30]
+})
+
+# Layout of the dashboard
+app.layout = html.Div(children=[
+    html.H1("Admin Dashboard"),
+    
+    # Bar chart
+    dcc.Graph(
+        id='example-graph',
+        figure=px.bar(df, x='Category', y='Values', title="Sample Bar Chart")
+    ),
+    
+    # Dropdown for category selection
+    html.Label('Select Category:'),
+    dcc.Dropdown(
+        id='category-dropdown',
+        options=[{'label': category, 'value': category} for category in df['Category']],
+        value='A'
+    ),
+    
+    # Table of data
+    html.H3('Data Table'),
+    html.Table([
+        html.Thead(
+            html.Tr([html.Th(col) for col in df.columns])
+        ),
+        html.Tbody([
+            html.Tr([
+                html.Td(df.iloc[i][col]) for col in df.columns
+            ]) for i in range(len(df))
+        ])
+    ]),
+
+    # Display selected category
+    html.Div(id='category-output')
+])
+
+# Callback to update the output based on the selected dropdown value
+@app.callback(
+    Output('category-output', 'children'),
+    [Input('category-dropdown', 'value')]
+)
+def update_output(value):
+    return f'You have selected {value}'
+
+# Run the app
+if __name__ == '__main__':
+    app.run_server(debug=True)
