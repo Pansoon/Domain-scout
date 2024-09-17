@@ -1,7 +1,5 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from '@mui/material';
-import ScanHistoryTable from './components/ScanHistoryTable'; // Correct import
-
 
 const scanData = [
   { domain: 'example.com', lastActive: '2024-09-10', httpStatus: '200 OK', portStatus: '80 Open', status: 'active' },
@@ -41,3 +39,5 @@ const ScanHistoryTable = () => (
     </Table>
   </TableContainer>
 );
+
+export default ScanHistoryTable;
