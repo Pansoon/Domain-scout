@@ -56,6 +56,8 @@ const DomainTrendChart = () => {
 
   // Function to parse the selected CSV file and group by domain, filling missing dates
   const parseCSVFile = useCallback((file) => {
+    if (!file) return;
+
     Papa.parse(file, {
       header: true,
       complete: (result) => {
@@ -115,6 +117,14 @@ const DomainTrendChart = () => {
     });
   }, [extractDomain]);
 
+  // Function to handle the refresh button click
+  const handleRefresh = () => {
+    if (selectedFile) {
+      setLoading(true); // Set loading state
+      parseCSVFile(selectedFile); // Re-parse the currently selected file
+    }
+  };
+
   return (
     <Card sx={{ backgroundColor: '#1e1e1e', color: '#ffffff', padding: '20px', textAlign: 'center' }}>
       <CardContent>
@@ -142,6 +152,17 @@ const DomainTrendChart = () => {
             {filePath}
           </Typography>
         )}
+
+        {/* Refresh Button */}
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleRefresh}
+          sx={{ marginBottom: '20px' }}
+          disabled={!selectedFile} // Disable refresh if no file is selected
+        >
+          Refresh Chart
+        </Button>
 
         {loading && <p>Loading data...</p>}
 

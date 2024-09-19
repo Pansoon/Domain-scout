@@ -10,6 +10,8 @@ from HTTP_status import get_http_status_code
 from report import generate_report
 from config import load_config
 from screenshot_module import capture_domain_screenshot
+from datetime import datetime
+from output_storage import save_scan_results  # Import the save_scan_results function
 
 
 class ScanWorker(QThread):
@@ -24,6 +26,7 @@ class ScanWorker(QThread):
 
     def run(self):
         results_list = []
+        scan_results_to_save = []  # List to store scan results for saving
 
         try:
             for domain in self.domains:
@@ -58,17 +61,16 @@ class ScanWorker(QThread):
 
                 # Step 3: Get HTTP status code
                 try:
-                    http_status = get_http_status_code(domain)
-                    if http_status is None:
-                        http_status = "N/A"
-                    self.update_status.emit(f"HTTP status code for {domain}: {http_status}")
+                    http_status_code, http_status_desc = get_http_status_code(domain)
+                    if http_status_code is None:
+                        http_status_code, http_status_desc = "N/A", "N/A"
+                    self.update_status.emit(f"HTTP status code for {domain}: {http_status_code} - {http_status_desc}")
                 except Exception as e:
                     self.update_status.emit(f"Failed to retrieve HTTP status for {domain}: {str(e)}")
-                    http_status = "N/A"
+                    http_status_code, http_status_desc = "N/A", "N/A"
 
                 # Step 4: Capture a screenshot of the domain
                 try:
-                    # Headless mode for fast scan, full browser for detailed scan
                     screenshot_path = capture_domain_screenshot(domain, headless=self.headless)
                     mode = "headless" if self.headless else "full browser mode"
                     self.update_status.emit(f"Screenshot captured for {domain} in {mode}. Saved to: {screenshot_path}")
@@ -80,14 +82,25 @@ class ScanWorker(QThread):
                     "Domain Name": sanitized_domain,
                     "IP Address": ip_address,
                     "Port Status": port_status,
-                    "HTTP Status": http_status,
+                    "HTTP Status": f"{http_status_code} - {http_status_desc}",
                     "Screenshot": screenshot_path
                 }
 
                 results_list.append(results)
                 self.update_status.emit(f"Aggregated results for {domain}")
 
-            # Step 6: Generate the report
+                # Step 6: Prepare scan results for saving
+                scan_results_to_save.append({
+                    'domain_name': sanitized_domain,
+                    'scan_date': datetime.now().strftime('%Y-%m-%d'),
+                    'port_status': port_status,
+                    'http_status_code': http_status_code,
+                    'http_status_desc': http_status_desc,
+                    'additional_info': screenshot_path,
+                    'type_of_phishing': 'N/A'  # You can modify this based on your logic
+                })
+
+            # Step 7: Generate the report
             if results_list:
                 try:
                     report_type = 'pdf' if self.config.get('report_type') == 'pdf' else 'text'
@@ -98,11 +111,17 @@ class ScanWorker(QThread):
             else:
                 self.update_status.emit("No valid results to report.")
 
+            # Step 8: Save the scan results to CSV
+            try:
+                save_scan_results(scan_results_to_save)
+                self.update_status.emit(f"Scan results saved to output storage.")
+            except Exception as e:
+                self.update_status.emit(f"Failed to save scan results: {str(e)}")
+
         except Exception as e:
             self.update_status.emit(f"An unexpected error occurred: {str(e)}")
 
         self.finished.emit()
-
 
 class DomainScannerApp(QMainWindow):
     def __init__(self):

@@ -85,8 +85,8 @@ if __name__ == "__main__":
 
     # Sample scan results
     scan_results = [
-    {"domain_name": "example.com", "scan_date": "2024-09-13", "port_status": "Port 80 Open", "http_status_code": 404, "http_status_desc": "Not Found", "additional_info": "N/A", "type_of_phishing": "Spear Phishing"},
-    {"domain_name": "example.xyz", "scan_date": "2024-09-13", "port_status": "Port 80 Closed", "http_status_code": None, "http_status_desc": "N/A", "additional_info": "Timeout", "type_of_phishing": "Clone Phishing"}
+        {"domain_name": "example.com", "scan_date": "2024-09-13", "port_status": "Port 80 Open", "http_status_code": 404, "http_status_desc": "Not Found", "additional_info": "N/A", "type_of_phishing": "Spear Phishing"},
+        {"domain_name": "example.xyz", "scan_date": "2024-09-13", "port_status": "Port 80 Closed", "http_status_code": None, "http_status_desc": "N/A", "additional_info": "Timeout", "type_of_phishing": "Clone Phishing"}
     ]
 
     # Save scan results for today
