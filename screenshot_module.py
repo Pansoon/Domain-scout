@@ -81,7 +81,7 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
         final_url = driver.current_url
         if final_url != domain_url:
             print(f"Redirected from {domain_url} to {final_url}")
-            time.sleep(2)  # Wait for the redirected page to fully load
+            time.sleep(5)  # Wait for the redirected page to fully load
 
         # Capture the dynamic headers and referer
         headers = capture_request_headers()
