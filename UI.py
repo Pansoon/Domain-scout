@@ -1,4 +1,5 @@
 import re
+import logging
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QFileDialog,
     QRadioButton, QVBoxLayout, QWidget, QHBoxLayout, QMessageBox, QGridLayout, QStatusBar
@@ -13,6 +14,10 @@ from screenshot_module import capture_domain_screenshot
 from datetime import datetime
 from output_storage import save_scan_results  # Import the save_scan_results function
 
+
+
+# Set up logging to a file
+logging.basicConfig(filename='http_status_debug.log', level=logging.INFO)
 
 class ScanWorker(QThread):
     update_status = pyqtSignal(str)
@@ -34,7 +39,8 @@ class ScanWorker(QThread):
                 self.update_status.emit(f"Starting scan for {domain}...")
 
                 # Initialize variables to ensure they are always defined
-                http_status = "N/A"
+                http_status_code = "N/A"
+                http_status_desc = "N/A"
                 ip_address = None
                 port_status = {}
                 screenshot_path = None
@@ -62,12 +68,18 @@ class ScanWorker(QThread):
                 # Step 3: Get HTTP status code
                 try:
                     http_status_code, http_status_desc = get_http_status_code(domain)
+                    # Log the actual HTTP response for debugging
+                    logging.info(f"Raw HTTP response for {domain}: {http_status_code} - {http_status_desc}")
+                    
                     if http_status_code is None:
                         http_status_code, http_status_desc = "N/A", "N/A"
+                        logging.warning(f"Empty or None HTTP status code for {domain}, defaulting to 'N/A'")
+                    
                     self.update_status.emit(f"HTTP status code for {domain}: {http_status_code} - {http_status_desc}")
                 except Exception as e:
                     self.update_status.emit(f"Failed to retrieve HTTP status for {domain}: {str(e)}")
                     http_status_code, http_status_desc = "N/A", "N/A"
+                    logging.error(f"Error retrieving HTTP status for {domain}: {str(e)}")
 
                 # Step 4: Capture a screenshot of the domain
                 try:
@@ -97,7 +109,7 @@ class ScanWorker(QThread):
                     'http_status_code': http_status_code,
                     'http_status_desc': http_status_desc,
                     'additional_info': screenshot_path,
-                    'type_of_phishing': 'N/A'  # You can modify this based on your logic
+                    'type_of_phishing': 'N/A'  # Modify this based on your logic
                 })
 
             # Step 7: Generate the report

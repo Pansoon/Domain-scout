@@ -60,14 +60,14 @@ def save_scan_results(scan_results):
 
         # Write the new scan results
         for scan in scan_results:
-            # Map the dictionary keys to the CSV field names
+            # Handle None values by replacing them with 'N/A'
             row = {
                 'Domain Name': scan.get('domain_name'),
                 'Scan Date': scan.get('scan_date'),
                 'Port Status': scan.get('port_status'),
-                'HTTP Status Code': scan.get('http_status_code'),
-                'HTTP Status Description': scan.get('http_status_desc'),
-                'Additional Info': scan.get('additional_info'),
+                'HTTP Status Code': scan.get('http_status_code', 'N/A') if scan.get('http_status_code') is not None else 'N/A',
+                'HTTP Status Description': scan.get('http_status_desc', 'N/A'),
+                'Additional Info': scan.get('additional_info', 'N/A'),
                 'Type of Phishing': scan.get('type_of_phishing', 'N/A')  # Default to 'N/A' if not provided
             }
             writer.writerow(row)

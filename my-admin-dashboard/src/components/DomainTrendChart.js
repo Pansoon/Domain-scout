@@ -4,7 +4,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import Papa from 'papaparse';
 import { v4 as uuidv4 } from 'uuid';
 
-// Memoized Custom Tooltip Component
 const CustomTooltip = React.memo(({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const { name, value } = payload[0];
@@ -18,6 +17,7 @@ const CustomTooltip = React.memo(({ active, payload, label }) => {
   return null;
 });
 
+
 const DomainTrendChart = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePath, setFilePath] = useState('');
@@ -26,11 +26,17 @@ const DomainTrendChart = () => {
   const [colors, setColors] = useState({}); // State to store the colors for each domain
   const [loading, setLoading] = useState(false);
 
-  // Function to extract domain from URL (after the last ".")
-  const extractDomain = useCallback((url) => {
-    const domainParts = url.split('.');
-    return domainParts.length > 1 ? domainParts.slice(-2).join('.') : url;
-  }, []);
+// Function to extract domain from URL (after the last ".")
+const extractDomain = useCallback((url) => {
+  if (!url || typeof url !== 'string') {
+    console.error('Invalid URL:', url); // Optional: log for debugging purposes
+    return 'Unknown';  // Return a default value if URL is invalid
+  }
+
+  const domainParts = url.split('.');
+  return domainParts.length > 1 ? domainParts.slice(-2).join('.') : url;
+}, []);
+
 
   // Generate a random color for a domain (only once)
   const getColorForDomain = (domain) => {

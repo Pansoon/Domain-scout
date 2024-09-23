@@ -88,6 +88,7 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
         print("Captured Headers:", json.dumps(headers, indent=4))
 
         # Capture the screenshot and save it
+        time.sleep(5)
         driver.save_screenshot(screenshot_path)
         print(f"Screenshot successfully saved to {screenshot_path}")
 
