@@ -1,4 +1,5 @@
 import re
+import time
 import logging
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QFileDialog,
@@ -35,7 +36,7 @@ class ScanWorker(QThread):
 
         try:
             for domain in self.domains:
-                sanitized_domain = re.sub(r'[\\/:"*?<>|]', '_', domain)
+                sanitized_domain = re.sub(r'[\\/:*?"<>|]', '_', domain)
                 self.update_status.emit(f"Starting scan for {domain}...")
 
                 # Initialize variables to ensure they are always defined
@@ -68,7 +69,6 @@ class ScanWorker(QThread):
                 # Step 3: Get HTTP status code
                 try:
                     http_status_code, http_status_desc = get_http_status_code(domain)
-                    # Log the actual HTTP response for debugging
                     logging.info(f"Raw HTTP response for {domain}: {http_status_code} - {http_status_desc}")
                     
                     if http_status_code is None:
@@ -83,9 +83,16 @@ class ScanWorker(QThread):
 
                 # Step 4: Capture a screenshot of the domain
                 try:
-                    screenshot_path = capture_domain_screenshot(domain, headless=self.headless)
+                    self.update_status.emit(f"Capturing screenshot for {domain}...")
+
+                    # Capture screenshot and ensure it waits for full completion
+                    screenshot_path = capture_domain_screenshot(f"http://{domain}", headless=self.headless)
                     mode = "headless" if self.headless else "full browser mode"
                     self.update_status.emit(f"Screenshot captured for {domain} in {mode}. Saved to: {screenshot_path}")
+
+                    # Add a small delay to ensure the screenshot process completes
+                    time.sleep(3)
+
                 except Exception as e:
                     self.update_status.emit(f"Failed to capture screenshot for {domain}: {str(e)}")
 
@@ -112,7 +119,11 @@ class ScanWorker(QThread):
                     'type_of_phishing': 'N/A'  # Modify this based on your logic
                 })
 
-            # Step 7: Generate the report
+                # Step 7: Wait between domain scans to ensure synchronization
+                self.update_status.emit(f"Waiting before scanning the next domain...")
+                time.sleep(5)  # Wait 5 seconds before moving to the next domain
+
+            # Step 8: Generate the report
             if results_list:
                 try:
                     report_type = 'pdf' if self.config.get('report_type') == 'pdf' else 'text'
@@ -123,7 +134,7 @@ class ScanWorker(QThread):
             else:
                 self.update_status.emit("No valid results to report.")
 
-            # Step 8: Save the scan results to CSV
+            # Step 9: Save the scan results to CSV
             try:
                 save_scan_results(scan_results_to_save)
                 self.update_status.emit(f"Scan results saved to output storage.")
@@ -133,6 +144,7 @@ class ScanWorker(QThread):
         except Exception as e:
             self.update_status.emit(f"An unexpected error occurred: {str(e)}")
 
+        # Signal that the scanning is complete
         self.finished.emit()
 
 class DomainScannerApp(QMainWindow):
