@@ -193,7 +193,7 @@ const ScanForm = () => {
               </Button>
             </Box>
 
-            {/* Help Dialog */}
+            {/* Help Dialog 54454*/}
             <Dialog open={helpOpen} onClose={handleHelpClose}>
               <DialogTitle>Help</DialogTitle>
               <DialogContent>
