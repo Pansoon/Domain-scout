@@ -1,36 +1,47 @@
 import re
+import time
+import logging
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QFileDialog,
     QRadioButton, QVBoxLayout, QWidget, QHBoxLayout, QMessageBox, QGridLayout, QStatusBar
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from IP_address import resolve_domain_to_ip  # Make sure these imports match your project structure
+from IP_address import resolve_domain_to_ip
 from PORT_scan import scan_ports
 from HTTP_status import get_http_status_code
 from report import generate_report
 from config import load_config
 from screenshot_module import capture_domain_screenshot
+from datetime import datetime
+from output_storage import save_scan_results  # Import the save_scan_results function
 
+
+
+# Set up logging to a file
+logging.basicConfig(filename='http_status_debug.log', level=logging.INFO)
 
 class ScanWorker(QThread):
     update_status = pyqtSignal(str)
     finished = pyqtSignal()
 
-    def __init__(self, domains, config):
+    def __init__(self, domains, config, headless):
         super().__init__()
         self.domains = domains
         self.config = config
+        self.headless = headless  # Headless (fast scan) or full browser (detailed scan)
 
     def run(self):
         results_list = []
+        scan_results_to_save = []  # List to store scan results for saving
 
         try:
             for domain in self.domains:
-                sanitized_domain = re.sub(r'[\\/:"*?<>|]', '_', domain)
+                sanitized_domain = re.sub(r'[\\/:*?"<>|]', '_', domain)
                 self.update_status.emit(f"Starting scan for {domain}...")
 
                 # Initialize variables to ensure they are always defined
-                http_status = "N/A"
+                http_status_code = "N/A"
+                http_status_desc = "N/A"
                 ip_address = None
                 port_status = {}
                 screenshot_path = None
@@ -46,7 +57,7 @@ class ScanWorker(QThread):
                     self.update_status.emit(f"Error resolving IP for {domain}: {str(e)}")
                     continue
 
-                # Step 2: Scan ports with the loaded configuration
+                # Step 2: Scan ports
                 try:
                     ports = self.config.get('ports', [80, 443, 22])
                     port_status = scan_ports(ip_address, ports)
@@ -57,34 +68,62 @@ class ScanWorker(QThread):
 
                 # Step 3: Get HTTP status code
                 try:
-                    http_status = get_http_status_code(domain)
-                    if http_status is None:
-                        http_status = "N/A"  # Default to "N/A" if None
-                    self.update_status.emit(f"HTTP status code for {domain}: {http_status}")
+                    http_status_code, http_status_desc = get_http_status_code(domain)
+                    logging.info(f"Raw HTTP response for {domain}: {http_status_code} - {http_status_desc}")
+                    
+                    if http_status_code is None:
+                        http_status_code, http_status_desc = "N/A", "N/A"
+                        logging.warning(f"Empty or None HTTP status code for {domain}, defaulting to 'N/A'")
+                    
+                    self.update_status.emit(f"HTTP status code for {domain}: {http_status_code} - {http_status_desc}")
                 except Exception as e:
                     self.update_status.emit(f"Failed to retrieve HTTP status for {domain}: {str(e)}")
-                    http_status = "N/A"
+                    http_status_code, http_status_desc = "N/A", "N/A"
+                    logging.error(f"Error retrieving HTTP status for {domain}: {str(e)}")
 
                 # Step 4: Capture a screenshot of the domain
                 try:
-                    screenshot_path = capture_domain_screenshot(domain)
-                    self.update_status.emit(f"Screenshot captured for {domain}. Saved to: {screenshot_path}")
+                    self.update_status.emit(f"Capturing screenshot for {domain}...")
+
+                    # Capture screenshot and ensure it waits for full completion
+                    screenshot_path = capture_domain_screenshot(f"http://{domain}", headless=self.headless)
+                    mode = "headless" if self.headless else "full browser mode"
+                    self.update_status.emit(f"Screenshot captured for {domain} in {mode}. Saved to: {screenshot_path}")
+
+                    # Add a small delay to ensure the screenshot process completes
+                    time.sleep(3)
+
                 except Exception as e:
                     self.update_status.emit(f"Failed to capture screenshot for {domain}: {str(e)}")
 
-                # Step 5: Aggregate results including screenshot path
+                # Step 5: Aggregate results
                 results = {
                     "Domain Name": sanitized_domain,
                     "IP Address": ip_address,
                     "Port Status": port_status,
-                    "HTTP Status": http_status,
+                    "HTTP Status": f"{http_status_code} - {http_status_desc}",
                     "Screenshot": screenshot_path
                 }
 
                 results_list.append(results)
                 self.update_status.emit(f"Aggregated results for {domain}")
 
-            # Step 6: Generate the report
+                # Step 6: Prepare scan results for saving
+                scan_results_to_save.append({
+                    'domain_name': sanitized_domain,
+                    'scan_date': datetime.now().strftime('%Y-%m-%d'),
+                    'port_status': port_status,
+                    'http_status_code': http_status_code,
+                    'http_status_desc': http_status_desc,
+                    'additional_info': screenshot_path,
+                    'type_of_phishing': 'N/A'  # Modify this based on your logic
+                })
+
+                # Step 7: Wait between domain scans to ensure synchronization
+                self.update_status.emit(f"Waiting before scanning the next domain...")
+                time.sleep(5)  # Wait 5 seconds before moving to the next domain
+
+            # Step 8: Generate the report
             if results_list:
                 try:
                     report_type = 'pdf' if self.config.get('report_type') == 'pdf' else 'text'
@@ -95,10 +134,18 @@ class ScanWorker(QThread):
             else:
                 self.update_status.emit("No valid results to report.")
 
+            # Step 9: Save the scan results to CSV
+            try:
+                save_scan_results(scan_results_to_save)
+                self.update_status.emit(f"Scan results saved to output storage.")
+            except Exception as e:
+                self.update_status.emit(f"Failed to save scan results: {str(e)}")
+
         except Exception as e:
             self.update_status.emit(f"An unexpected error occurred: {str(e)}")
 
-        self.finished.emit()  # Signal that the thread is finished
+        # Signal that the scanning is complete
+        self.finished.emit()
 
 class DomainScannerApp(QMainWindow):
     def __init__(self):
@@ -106,16 +153,16 @@ class DomainScannerApp(QMainWindow):
         self.current_config = None
         self.worker = None  # Track the worker thread
         self.initUI()
-        
+
     def initUI(self):
         self.setWindowTitle("Domain Scanner Tool")
         self.setGeometry(100, 100, 600, 400)  # Set window size
-        
+
         # Main widget and layout
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         layout = QVBoxLayout(main_widget)
-        
+
         # Grid layout for input and options
         grid_layout = QGridLayout()
         layout.addLayout(grid_layout)
@@ -149,10 +196,14 @@ class DomainScannerApp(QMainWindow):
         config_button.clicked.connect(self.load_config_file)
         grid_layout.addWidget(config_button, 1, 2)
 
-        # Run Scan Button
-        scan_button = QPushButton("Run Scan")
-        scan_button.clicked.connect(self.run_scan)
-        layout.addWidget(scan_button)
+        # Fast Scan and Detailed Scan Buttons
+        self.fast_scan_button = QPushButton("Fast Scan")
+        self.fast_scan_button.clicked.connect(self.start_fast_scan)
+        layout.addWidget(self.fast_scan_button)
+
+        self.detailed_scan_button = QPushButton("Detailed Scan")
+        self.detailed_scan_button.clicked.connect(self.start_detailed_scan)
+        layout.addWidget(self.detailed_scan_button)
 
         # Results Display
         self.text_results = QTextEdit()
@@ -197,7 +248,13 @@ class DomainScannerApp(QMainWindow):
         else:
             self.display_error("No configuration file selected")
 
-    def run_scan(self):
+    def start_fast_scan(self):
+        self.run_scan(headless=True)
+
+    def start_detailed_scan(self):
+        self.run_scan(headless=False)
+
+    def run_scan(self, headless):
         # Ensure that the configuration is initialized
         if self.current_config is None:
             self.current_config = {
@@ -228,7 +285,7 @@ class DomainScannerApp(QMainWindow):
         self.current_config['report_type'] = report_type
 
         # Start the background scan worker
-        self.worker = ScanWorker(domains, self.current_config)
+        self.worker = ScanWorker(domains, self.current_config, headless=headless)
         self.worker.update_status.connect(self.display_message)
         self.worker.finished.connect(self.scan_finished)
         self.worker.finished.connect(self.cleanup_thread)  # Connect to cleanup function
@@ -260,12 +317,14 @@ class DomainScannerApp(QMainWindow):
         QMessageBox.critical(self, "Error", message)
         self.status_bar.showMessage(f"Error: {message}", 5000)
 
+
 def main():
     import sys
     app = QApplication(sys.argv)
     scanner_app = DomainScannerApp()
     scanner_app.show()
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,31 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+
+# Sample DataFrame
+df = pd.DataFrame({
+    "Category": ["A", "B", "C", "D"],
+    "Values": [10, 20, 15, 30]
+})
+
+# Set up the Streamlit dashboard layout
+st.title("Admin Dashboard")
+
+# Input box to filter by category
+category_filter = st.selectbox("Select Category:", df['Category'])
+
+# Filtered DataFrame based on selected category
+filtered_df = df[df['Category'] == category_filter]
+
+# Bar chart of the filtered data
+st.subheader(f"Bar Chart of Category {category_filter}")
+fig = px.bar(filtered_df, x='Category', y='Values')
+st.plotly_chart(fig)
+
+# Show the full data table
+st.subheader("Full Data Table")
+st.dataframe(df)
+
+# Display the selected category
+st.write(f"You selected category: {category_filter}")

@@ -1,0 +1,19 @@
+Domain Name,Scan Date,Port Status,HTTP Status Code,HTTP Status Description,Additional Info
+example.com,2024-09-17,Port 80 Open,200.0,OK,
+example.com,2024-09-24,Port 80 Open,200.0,OK,
+example.com,2024-10-01,Port 80 Open,200.0,OK,
+example.com,2024-10-08,Port 80 Open,200.0,OK,
+example.com,2024-10-15,Port 80 Open,200.0,OK,
+example.com,2024-10-22,Port 80 Open,200.0,OK,
+example.com,2024-10-29,Port 80 Open,200.0,OK,
+example.com,2024-11-05,Port 80 Open,200.0,OK,
+example.com,2024-11-12,Port 80 Open,200.0,OK,
+example.xyz,2024-09-17,Port 80 Closed,,,Timeout
+example.xyz,2024-09-24,Port 80 Closed,,,Timeout
+example.xyz,2024-10-01,Port 80 Closed,,,Timeout
+example.xyz,2024-10-08,Port 80 Closed,,,Timeout
+example.xyz,2024-10-15,Port 80 Closed,,,Timeout
+example.xyz,2024-10-22,Port 80 Closed,,,Timeout
+example.xyz,2024-10-29,Port 80 Closed,,,Timeout
+example.xyz,2024-11-05,Port 80 Closed,,,Timeout
+example.xyz,2024-11-12,Port 80 Closed,,,Timeout

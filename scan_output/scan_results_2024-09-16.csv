@@ -1,0 +1,3 @@
+Domain Name,Scan Date,Port Status,HTTP Status Code,HTTP Status Description,Additional Info
+example.com,2024-09-13,Port 80 Open,404,Not Found,N/A
+example.xyz,2024-09-13,Port 80 Closed,,N/A,Timeout

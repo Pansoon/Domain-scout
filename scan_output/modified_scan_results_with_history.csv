@@ -1,0 +1,60 @@
+Domain Name,Scan Date,Port Status,HTTP Status Code,HTTP Status Description,Additional Info
+coolwebsite.biz,2024-02-14,Port 80 Closed/Filtered,200.0,OK,Historical data
+coolwebsite.biz,2024-02-15,Port 80 Closed/Filtered,200.0,OK,Historical data
+coolwebsite.biz,2024-03-17,Port 80 Open,200.0,OK,Historical data
+coolwebsite.biz,2024-05-22,Port 443 Closed/Filtered,,No Response,Historical data
+coolwebsite.biz,2024-09-18,Port 80 Open,404.0,Not Found,
+coolwebsite.biz,2024-09-18,Port 443 Closed/Filtered,404.0,Not Found,
+demo.org,2023-12-15,Port 443 Closed/Filtered,200.0,OK,Historical data
+demo.org,2024-07-26,Port 443 Closed/Filtered,404.0,Not Found,Historical data
+demo.org,2024-08-28,Port 80 Open,200.0,OK,Historical data
+demo.org,2024-09-18,Port 80 Open,,No Response,
+demo.org,2024-09-18,Port 443 Open,,No Response,
+exampledomain.com,2023-10-04,Port 80 Closed/Filtered,200.0,OK,Historical data
+exampledomain.com,2023-11-13,Port 80 Closed/Filtered,500.0,Server Error,Historical data
+exampledomain.com,2023-12-15,Port 443 Closed/Filtered,200.0,OK,Historical data
+exampledomain.com,2024-01-28,Port 443 Closed/Filtered,,No Response,Historical data
+exampledomain.com,2024-08-21,Port 443 Closed/Filtered,500.0,Server Error,Historical data
+exampledomain.com,2024-09-18,Port 80 Closed/Filtered,,No Response,
+exampledomain.com,2024-09-18,Port 443 Open,200.0,OK,
+myexample.org,2023-12-16,Port 80 Open,200.0,OK,Historical data
+myexample.org,2024-03-19,Port 80 Closed/Filtered,,No Response,Historical data
+myexample.org,2024-03-19,Port 80 Open,200.0,OK,Historical data
+myexample.org,2024-06-23,Port 80 Closed/Filtered,500.0,Server Error,Historical data
+myexample.org,2024-09-18,Port 80 Closed/Filtered,,No Response,
+myexample.org,2024-09-18,Port 443 Closed/Filtered,403.0,Forbidden,
+randomdata.info,2023-10-27,Port 80 Closed/Filtered,,No Response,Historical data
+randomdata.info,2023-11-06,Port 443 Closed/Filtered,200.0,OK,Historical data
+randomdata.info,2024-08-24,Port 80 Closed/Filtered,404.0,Not Found,Historical data
+randomdata.info,2024-09-18,Port 80 Closed/Filtered,404.0,Not Found,
+randomdata.info,2024-09-18,Port 443 Closed/Filtered,200.0,OK,
+randomsite.com,2024-01-11,Port 80 Open,404.0,Not Found,Historical data
+randomsite.com,2024-02-11,Port 80 Closed/Filtered,500.0,Server Error,Historical data
+randomsite.com,2024-03-05,Port 443 Closed/Filtered,500.0,Server Error,Historical data
+randomsite.com,2024-09-18,Port 80 Closed/Filtered,,No Response,
+randomsite.com,2024-09-20,Port 443 Closed/Filtered,,No Response,
+samplepage.io,2023-10-14,Port 80 Open,,No Response,Historical data
+samplepage.io,2024-02-29,Port 80 Closed/Filtered,,No Response,Historical data
+samplepage.io,2024-07-14,Port 80 Open,500.0,Server Error,Historical data
+samplepage.io,2024-08-10,Port 80 Closed/Filtered,404.0,Not Found,Historical data
+samplepage.io,2024-09-18,Port 80 Closed/Filtered,404.0,Not Found,
+samplepage.io,2024-09-18,Port 443 Open,,No Response,
+siteplaceholder.com,2023-12-07,Port 80 Open,500.0,Server Error,Historical data
+siteplaceholder.com,2024-01-04,Port 80 Open,500.0,Server Error,Historical data
+siteplaceholder.com,2024-01-10,Port 443 Closed/Filtered,200.0,OK,Historical data
+siteplaceholder.com,2024-03-17,Port 80 Closed/Filtered,404.0,Not Found,Historical data
+siteplaceholder.com,2024-05-15,Port 80 Closed/Filtered,404.0,Not Found,Historical data
+siteplaceholder.com,2024-09-18,Port 80 Closed/Filtered,404.0,Not Found,
+siteplaceholder.com,2024-09-18,Port 443 Closed/Filtered,403.0,Forbidden,
+testdomain.net,2023-11-26,Port 443 Closed/Filtered,200.0,OK,Historical data
+testdomain.net,2024-01-09,Port 80 Open,500.0,Server Error,Historical data
+testdomain.net,2024-02-08,Port 80 Closed/Filtered,404.0,Not Found,Historical data
+testdomain.net,2024-04-20,Port 80 Closed/Filtered,200.0,OK,Historical data
+testdomain.net,2024-05-29,Port 80 Closed/Filtered,404.0,Not Found,Historical data
+testdomain.net,2024-09-18,Port 80 Open,404.0,Not Found,
+testdomain.net,2024-09-18,Port 443 Closed/Filtered,,No Response,
+testexample.net,2023-09-26,Port 80 Open,,No Response,Historical data
+testexample.net,2023-11-08,Port 443 Closed/Filtered,200.0,OK,Historical data
+testexample.net,2024-02-14,Port 80 Closed/Filtered,500.0,Server Error,Historical data
+testexample.net,2024-09-18,Port 80 Closed/Filtered,200.0,OK,
+testexample.net,2024-09-18,Port 443 Open,200.0,OK,
