@@ -100,7 +100,7 @@ const ScanForm = () => {
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
             {/* Domain Name Input */}
-            <Grid item xs={12}>
+            <Grid item xs={9}>
               <TextField
                 label="Domain Name(s)"
                 variant="outlined"

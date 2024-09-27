@@ -28,6 +28,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import ScanHistoryTable from './components/ScanHistoryTable';
 import DomainTrendChart from './components/DomainTrendChart';
+import ScanForm from './components/ScanForm';
 
 const httpStatusData = [
   { name: '200 OK', value: 12 },
@@ -111,6 +112,18 @@ const Dashboard = () => {
             <Button variant="contained" color="primary" startIcon={<RefreshIcon />} onClick={refreshDashboard} sx={{ marginTop: '10px' }}>
               Refresh Dashboard
             </Button>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      {/* Domain Scanner Section */}
+      <Grid item xs={12}>
+        <Card sx={{ backgroundColor: '#1e1e1e', color: '#ffffff'}}>
+          <CardContent>
+            <Typography variant="h4" sx={{ color: '#18ffff', marginBottom: '20px' }}>
+              Domain Scanner
+            </Typography>
+            <ScanForm />
           </CardContent>
         </Card>
       </Grid>
