@@ -28,7 +28,11 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import ScanHistoryTable from './components/ScanHistoryTable';
 import DomainTrendChart from './components/DomainTrendChart';
+<<<<<<< Updated upstream
 import ScanForm from './components/ScanForm';
+=======
+import HTTPStatusDistribution from './components/HTTPStatusDistribution';
+>>>>>>> Stashed changes
 
 const httpStatusData = [
   { name: '200 OK', value: 12 },
@@ -135,33 +139,7 @@ const Dashboard = () => {
 
       {/* HTTP Status Distribution (Pie Chart) */}
       <Grid item xs={12} md={6}>
-        <Card sx={{ backgroundColor: '#1e1e1e', color: '#ffffff', padding: '20px', textAlign: 'center' }}>
-          <CardContent>
-            <Typography variant="h4" sx={{ color: '#18ffff', marginBottom: '20px' }}>
-              HTTP Status Distribution
-            </Typography>
-            <ResponsiveContainer width="100%" height={400}>
-              <PieChart>
-                <Pie
-                  data={httpStatusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {httpStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <HTTPStatusDistribution/>
       </Grid>
 
       {/* Domain Status Bar Chart (Active vs Closed) */}
