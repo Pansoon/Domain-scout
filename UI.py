@@ -20,6 +20,19 @@ from output_storage import save_scan_results  # Import the save_scan_results fun
 # Set up logging to a file
 logging.basicConfig(filename='http_status_debug.log', level=logging.INFO)
 
+import re
+import time
+import logging
+from PyQt5.QtCore import QThread, pyqtSignal
+from datetime import datetime
+from IP_address import resolve_domain_to_ip
+from PORT_scan import scan_ports
+from HTTP_status import get_http_status_code
+from screenshot_module import capture_domain_screenshot
+from report import generate_report
+from output_storage import save_scan_results
+
+
 class ScanWorker(QThread):
     update_status = pyqtSignal(str)
     finished = pyqtSignal()
@@ -45,6 +58,7 @@ class ScanWorker(QThread):
                 ip_address = None
                 port_status = {}
                 screenshot_path = None
+                redirected_url = None  # Store redirected URL
 
                 # Step 1: Resolve domain to IP
                 try:
@@ -81,14 +95,15 @@ class ScanWorker(QThread):
                     http_status_code, http_status_desc = "N/A", "N/A"
                     logging.error(f"Error retrieving HTTP status for {domain}: {str(e)}")
 
-                # Step 4: Capture a screenshot of the domain
+                # Step 4: Capture a screenshot and get redirected URL
                 try:
                     self.update_status.emit(f"Capturing screenshot for {domain}...")
 
-                    # Capture screenshot and ensure it waits for full completion
-                    screenshot_path = capture_domain_screenshot(f"http://{domain}", headless=self.headless)
+                    # Capture screenshot and ensure it waits for full completion, also capture redirected URL
+                    screenshot_path, redirected_url = capture_domain_screenshot(f"http://{domain}", headless=self.headless)
                     mode = "headless" if self.headless else "full browser mode"
                     self.update_status.emit(f"Screenshot captured for {domain} in {mode}. Saved to: {screenshot_path}")
+                    self.update_status.emit(f"Redirected URL: {redirected_url}")
 
                     # Add a small delay to ensure the screenshot process completes
                     time.sleep(3)
@@ -102,7 +117,8 @@ class ScanWorker(QThread):
                     "IP Address": ip_address,
                     "Port Status": port_status,
                     "HTTP Status": f"{http_status_code} - {http_status_desc}",
-                    "Screenshot": screenshot_path
+                    "Screenshot": screenshot_path,
+                    "Redirected URL": redirected_url  # Include the redirected URL
                 }
 
                 results_list.append(results)
@@ -116,6 +132,7 @@ class ScanWorker(QThread):
                     'http_status_code': http_status_code,
                     'http_status_desc': http_status_desc,
                     'additional_info': screenshot_path,
+                    'redirected_url': redirected_url,  # Save the redirected URL
                     'type_of_phishing': 'N/A'  # Modify this based on your logic
                 })
 
