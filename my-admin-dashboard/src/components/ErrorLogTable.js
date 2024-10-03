@@ -1,7 +1,5 @@
-// src/components/ErrorLogTable.js
-
 import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from '@mui/material';
 
 // Sample error logs data
 const initialErrorLogs = [
@@ -23,15 +21,23 @@ const ErrorLogTable = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {errorLogs.map((log, index) => (
-            <TableRow key={index}>
-              <TableCell sx={{ color: '#ffffff' }}>{log.timestamp}</TableCell>
-              <TableCell sx={{ color: '#ffffff' }}>{log.message}</TableCell>
-              <TableCell sx={{ color: log.level === 'Critical' ? '#ff0033' : '#ffc107' }}>
-                {log.level}
+          {errorLogs.length > 0 ? (
+            errorLogs.map((log, index) => (
+              <TableRow key={index}>
+                <TableCell sx={{ color: '#ffffff' }}>{log.timestamp}</TableCell>
+                <TableCell sx={{ color: '#ffffff' }}>{log.message}</TableCell>
+                <TableCell sx={{ color: log.level === 'Critical' ? '#ff0033' : '#ffc107' }}>
+                  {log.level}
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={3} sx={{ textAlign: 'center', color: '#ffffff' }}>
+                <Typography variant="body1">No error logs available</Typography>
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
     </TableContainer>
