@@ -1,3 +1,4 @@
+import json
 import re
 import time
 import logging
@@ -19,18 +20,6 @@ from output_storage import save_scan_results  # Import the save_scan_results fun
 
 # Set up logging to a file
 logging.basicConfig(filename='http_status_debug.log', level=logging.INFO)
-
-import re
-import time
-import logging
-from PyQt5.QtCore import QThread, pyqtSignal
-from datetime import datetime
-from IP_address import resolve_domain_to_ip
-from PORT_scan import scan_ports
-from HTTP_status import get_http_status_code
-from screenshot_module import capture_domain_screenshot
-from report import generate_report
-from output_storage import save_scan_results
 
 
 class ScanWorker(QThread):
@@ -281,6 +270,7 @@ class DomainScannerApp(QMainWindow):
 
         # Collect domain inputs and configuration
         domain_input = self.entry_domain.text().strip()
+        print(f"Domains to scan: {domain_input}")
 
         # Ensure domain_input is a string
         if not isinstance(domain_input, str):

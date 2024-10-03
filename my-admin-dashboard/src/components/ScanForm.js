@@ -20,122 +20,159 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import axios from 'axios';
 
-// Simulated scan functions (based on mock data)
-const resolveDomainToIP = (domain) => {
-  return domain === 'example.com' ? '93.184.216.34' : '192.168.0.1'; // Mock data
-};
-
-const scanPorts = (ip) => {
-  return { 80: 'open', 443: 'open', 22: 'closed' }; // Mock data
-};
-
-const getHTTPStatus = (domain) => {
-  return domain === 'example.com' ? '200 OK' : '404 Not Found'; // Mock data
-};
-
-// Main ScanForm Component
-const ScanForm = () => {
+export default function DomainScanner() {
   const [domain, setDomain] = useState('');
   const [scanType, setScanType] = useState('quick');
   const [isLoading, setIsLoading] = useState(false);
   const [scanResults, setScanResults] = useState(null);
   const [reportType, setReportType] = useState('text');
+  const [autoScanInterval, setAutoScanInterval] = useState(1);
   const [helpOpen, setHelpOpen] = useState(false);
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
-    setTimeout(() => {
-      const ipAddress = resolveDomainToIP(domain);
-      const portStatus = scanPorts(ipAddress);
-      const httpStatus = getHTTPStatus(domain);
-
-      const results = {
-        domain,
-        ipAddress,
-        portStatus,
-        httpStatus,
-      };
-
-      setScanResults(results);
+    
+    try {
+      // Make a POST request to the Flask API to run the Python script with the domain
+      const response = await axios.post('http://127.0.0.1:5000/run-python', {
+        domains: domain.split(',').map(d => d.trim()), // Send the input domains as an array
+        scanType: scanType, 
+        reportType: reportType, 
+        //autoScanInterval: autoScanInterval,
+      });
+      
+      // Assuming the response contains the aggregated results from aggregation.py
+      const results = response.data;
+  
+      // Store the results
+      setScanResults({
+        // Adjust how you store results based on the response structure
+        domain: results.domain,
+        ipAddress: results.ipAddress,
+        httpStatus: results.httpStatus,
+        portStatus: results.portStatus,
+      });
+    } catch (error) {
+      console.error('Error running Python script:', error);
+      alert('Error running scan. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 2000); // Simulate delay
+    }
   };
+  
+  
 
-  // Handle loading domains from a file
+
   const handleLoadFile = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const fileContents = e.target.result;
-        setDomain(fileContents.replace(/\n/g, ', ').trim()); // Replace new lines with commas
+        const fileContents = e.target?.result;
+        if (typeof fileContents === 'string') {
+          setDomain(fileContents.replace(/\n/g, ', ').trim());
+        }
       };
       reader.readAsText(file);
     }
   };
 
-  // Handle clearing results
   const handleClearResults = () => {
     setScanResults(null);
     setDomain('');
   };
 
-  // Handle showing help dialog
-  const handleHelpClick = () => {
-    setHelpOpen(true);
-  };
-
-  const handleHelpClose = () => {
-    setHelpOpen(false);
-  };
+  const handleHelpClick = () => setHelpOpen(true);
+  const handleHelpClose = () => setHelpOpen(false);
 
   return (
-    <Card sx={{ backgroundColor: '#1e1e1e', color: '#ffffff', padding: '20px', margin: 'auto', borderRadius: '15px', maxWidth: '1000px' }}>
+    <Card
+      sx={{
+        maxWidth: '1200px',
+        margin: 'auto',
+        backgroundColor: '#1e1e1e',
+        padding: 3,
+        borderRadius: 2,
+        color: '#ffffff',
+        boxShadow: 'none',
+        border: 'none',
+      }}
+    >
       <CardContent>
-        <Grid container spacing={9}>
-          {/* Left Column: Form */}
+        <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', fontWeight: 'bold', color: '#18ffff' }}>
+          Domain Scanner
+        </Typography>
+
+        <Grid container spacing={4}>
+          {/* Left Column */}
           <Grid item xs={12} md={6}>
             <form onSubmit={handleSubmit}>
-              <Grid container spacing={3} alignItems="center" justifyContent="center">
-                {/* Domain Input Section */}
-                <Grid item xs={12} md={8}>
-                  <TextField
-                    label="Domain Name(s)"
-                    variant="outlined"
-                    fullWidth
-                    value={domain}
-                    onChange={(e) => setDomain(e.target.value)}
-                    sx={{ backgroundColor: '#31363F', borderRadius: '5px', color: '#ffffff' }}
-                    InputLabelProps={{ style: { color: '#18ffff' } }}
-                    required
-                  />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Button
-                    variant="contained"
-                    component="label"
-                    fullWidth
-                    sx={{ backgroundColor: '#1B9CFC', color: '#fff', textAlign: 'center', justifyContent: 'center', display: 'flex' }}
-                  >
-                    Load from File
-                    <input type="file" hidden accept=".txt" onChange={handleLoadFile} />
-                  </Button>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Grid container spacing={2} alignItems="flex-end">
+                    <Grid item xs={8}>
+                      <TextField
+                        label="Domain Name(s)"
+                        variant="outlined"
+                        fullWidth
+                        value={domain}
+                        onChange={(e) => setDomain(e.target.value)}
+                        sx={{
+                          backgroundColor: '#2e2e2e',
+                          borderRadius: 1,
+                          '& .MuiOutlinedInput-root': {
+                            height: '48px',
+                          },
+                        }}
+                        InputLabelProps={{
+                          style: { color: '#18ffff' },
+                        }}
+                        InputProps={{
+                          style: { color: '#ffffff' },
+                        }}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={4} justifyContent="center">
+                      <Button
+                        variant="contained"
+                        component="label"
+                        fullWidth
+                        sx={{
+                          backgroundColor: '#00C49F',
+                          color: '#ffffff',
+                          height: '48px',
+                          maxWidth: '300px', // Optional: limit button width
+                          textAlign: 'center', // Center the text horizontally
+                          justifyContent: 'center', // Ensure content is centered
+                        }}
+                      >
+                        Load from File
+                        <input type="file" hidden accept=".txt" onChange={handleLoadFile} />
+                      </Button>
 
+                    </Grid>
+                  </Grid>
                 </Grid>
 
-                {/* Scan Type Section */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                   <FormControl fullWidth>
                     <InputLabel sx={{ color: '#18ffff' }}>Scan Type</InputLabel>
                     <Select
                       value={scanType}
                       onChange={(e) => setScanType(e.target.value)}
-                      sx={{ backgroundColor: '#31363F', borderRadius: '5px', color: '#ffffff' }}
-                      inputProps={{ sx: { color: '#ffffff' } }}
+                      sx={{
+                        backgroundColor: '#2e2e2e',
+                        borderRadius: 1,
+                        color: '#ffffff',
+                        height: '48px',
+                      }}
+                      inputProps={{
+                        sx: { color: '#ffffff', height: '48px' },
+                      }}
                     >
                       <MenuItem value="quick">Quick Scan</MenuItem>
                       <MenuItem value="detailed">Detailed Scan</MenuItem>
@@ -143,24 +180,71 @@ const ScanForm = () => {
                   </FormControl>
                 </Grid>
 
-                {/* Report Type Section */}
-                <Grid item xs={12} md={6}>
-                  <Typography variant="h6" sx={{ color: '#18ffff', marginBottom: '10px' }}>Report Type</Typography>
-                  <FormControl component="fieldset">
-                    <RadioGroup row value={reportType} onChange={(e) => setReportType(e.target.value)}>
-                      <FormControlLabel value="text" control={<Radio sx={{ color: '#18ffff' }} />} label="Text" />
-                      <FormControlLabel value="pdf" control={<Radio sx={{ color: '#18ffff' }} />} label="PDF" />
-                    </RadioGroup>
-                  </FormControl>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" gutterBottom sx={{ color: '#18ffff' }}>
+                    Report Type
+                  </Typography>
+                  <RadioGroup
+                    row
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value)}
+                  >
+                    <FormControlLabel
+                      value="text"
+                      control={<Radio sx={{ color: '#18ffff' }} />}
+                      label="Text"
+                      sx={{ color: '#ffffff' }}
+                    />
+                    <FormControlLabel
+                      value="pdf"
+                      control={<Radio sx={{ color: '#18ffff' }} />}
+                      label="PDF"
+                      sx={{ color: '#ffffff' }}
+                    />
+                  </RadioGroup>
                 </Grid>
 
-                {/* Action Buttons */}
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel sx={{ color: '#18ffff' }}>Select Auto Scan Interval (hours)</InputLabel>
+                    <Select
+                      value={autoScanInterval}
+                      onChange={(e) => setAutoScanInterval(Number(e.target.value))}
+                      sx={{
+                        backgroundColor: '#31363F',
+                        borderRadius: '5px',
+                        color: '#ffffff',
+                        height: '48px'
+                      }}
+                      inputProps={{
+                        sx: {
+                          color: '#ffffff',
+                          height: '48px'
+                        }
+                      }}
+                    >
+                      {Array.from({ length: 24 }, (_, i) => i + 1).map((hour) => (
+                        <MenuItem key={hour} value={hour}>
+                          {hour} hour{hour > 1 ? 's' : ''}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Typography sx={{ marginTop: 2, color: '#ffffff' }}>
+                    Selected Interval: {autoScanInterval} hour(s)
+                  </Typography>
+                </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Button
                     type="submit"
                     variant="contained"
                     fullWidth
-                    sx={{ backgroundColor: '#00C49F', color: '#fff' }}
+                    sx={{
+                      backgroundColor: '#00C49F',
+                      color: '#fff',
+                      height: '48px'
+                    }}
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -173,11 +257,16 @@ const ScanForm = () => {
                     )}
                   </Button>
                 </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Button
                     variant="contained"
                     fullWidth
-                    sx={{ backgroundColor: '#FF3333', color: '#fff' }}
+                    sx={{
+                      backgroundColor: '#FF3333',
+                      color: '#fff',
+                      height: '48px'
+                    }}
                     onClick={handleClearResults}
                   >
                     Clear Results
@@ -185,43 +274,19 @@ const ScanForm = () => {
                 </Grid>
               </Grid>
             </form>
-
-            {/* Help Dialog Trigger */}
-            <Box mt={4} textAlign="center">
-              <Button variant="contained" color="info" onClick={handleHelpClick}>
-                Help
-              </Button>
-            </Box>
-
-            {/* Help Dialog 54454*/}
-            <Dialog open={helpOpen} onClose={handleHelpClose}>
-              <DialogTitle>Help</DialogTitle>
-              <DialogContent>
-                <Typography>
-                  Enter one or more domain names, separated by commas.
-                </Typography>
-                <Typography>
-                  You can also load a list of domains from a text file, select the report type, and start a scan.
-                </Typography>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleHelpClose} color="primary">Close</Button>
-              </DialogActions>
-            </Dialog>
           </Grid>
 
-          {/* Right Column: Scan Results (Always visible) */}
+          {/* Right Column */}
           <Grid item xs={12} md={6}>
-            <Typography variant="h6" sx={{ color: '#18ffff', marginBottom: '10px' }}>Scan Results</Typography>
+            <Typography variant="h6" gutterBottom sx={{ color: '#18ffff' }}>
+              Scan Results
+            </Typography>
             <Box
               sx={{
-                padding: '20px',
-                backgroundColor: '#31363F',
-                borderRadius: '5px',
-                height: '250px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
+                padding: 2,
+                backgroundColor: '#2e2e2e',
+                borderRadius: 1,
+                minHeight: '400px',
                 color: '#ffffff',
               }}
             >
@@ -238,14 +303,26 @@ const ScanForm = () => {
                   </ul>
                 </>
               ) : (
-                <Typography>No results yet. Start a scan to see the results here.</Typography>
+                <Typography>No results yet. Start a scan to see the results.</Typography>
               )}
             </Box>
           </Grid>
         </Grid>
       </CardContent>
+
+      <Dialog open={helpOpen} onClose={handleHelpClose}>
+        <DialogTitle sx={{ color: '#18ffff' }}>Help</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ color: '#ffffff' }}>
+            Enter the domain name(s) you want to scan. You can load domain names from a text file as well. Choose the scan type and report format before starting the scan.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleHelpClose} sx={{ color: '#18ffff' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
-};
-
-export default ScanForm;
+}
