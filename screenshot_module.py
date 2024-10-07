@@ -5,6 +5,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from report import generate_report
 import time
 import os
 
@@ -17,6 +18,7 @@ USER_AGENTS = {
 def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_file=None, device='android', headless=False):
     """
     Function to capture a screenshot with user-agent simulation and headless mode control.
+    Additionally, saves the redirected URL after the screenshot.
     """
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
@@ -38,6 +40,7 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
 
     # Initialize the Chrome WebDriver
     driver = None
+    redirected_url = None
     try:
         print(f"Opening browser for {domain_url} with {device} device simulation...")
         driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
@@ -47,6 +50,10 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
 
         # Wait for the page to load or redirection to complete
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+
+        # Get the final redirected URL
+        redirected_url = driver.current_url
+        print(f"Redirected URL: {redirected_url}")
 
         # Capture the screenshot and save it
         driver.save_screenshot(screenshot_path)
@@ -65,18 +72,33 @@ def capture_domain_screenshot(domain_url, output_dir='screenshots', screenshot_f
             driver.quit()
             print("Browser closed.")
 
-    return screenshot_path
+    return screenshot_path, redirected_url  # Return both screenshot path and redirected URL
 
-# Example usage: Capture screenshots for multiple domains with different devices
+# Example usage:
 if __name__ == "__main__":
     # List of domains to capture screenshots from
     domains = ["https://www.fla-sh.cc"]
 
+    results_list = []
+
     for domain in domains:
-        # Capture screenshot as Samsung Galaxy S23 (Android)
-        capture_domain_screenshot(domain, device='android', headless=True)  # Fast Scan (Headless)
-        time.sleep(1)  # Add a short delay between screenshots
-        
-        # Capture screenshot as iPhone (Apple)
-        capture_domain_screenshot(domain, device='apple', headless=False)  # Detailed Scan (Full Browser)
-        time.sleep(1)  # Add a short delay between screenshots
+        # Capture screenshot as Android (Fast Scan)
+        screenshot_android, redirected_link_android = capture_domain_screenshot(domain, device='android', headless=True)
+        results_list.append({
+            "Domain Name": domain,
+            "Screenshot": screenshot_android,
+            "Redirected Link": redirected_link_android,
+            "Device": "Android"
+        })
+
+        # Capture screenshot as Apple (Detailed Scan)
+        screenshot_apple, redirected_link_apple = capture_domain_screenshot(domain, device='apple', headless=False)
+        results_list.append({
+            "Domain Name": domain,
+            "Screenshot": screenshot_apple,
+            "Redirected Link": redirected_link_apple,
+            "Device": "Apple"
+        })
+
+    # Call the report generation function here
+    generate_report(results_list, report_type='pdf')

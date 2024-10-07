@@ -2,10 +2,10 @@ import os
 from datetime import datetime
 from fpdf import FPDF
 from collections import defaultdict
-
+from screenshot_module import redirected_url, screenshot_path
 def generate_report(results_list, report_type='text', report_file=None):
     """
-    Generates and saves a report of the scan results for multiple domains, including screenshots.
+    Generates and saves a report of the scan results for multiple domains, including screenshots and redirected links.
 
     :param results_list: A list of dictionaries, each containing the scan data for a domain.
     :param report_type: The format of the report ('text' or 'pdf'). Default is 'text'.
@@ -40,7 +40,7 @@ def generate_report(results_list, report_type='text', report_file=None):
 
 def generate_text_report(results_list, report_file):
     """
-    Generates a text report and saves it to a file for multiple domains, including screenshot paths.
+    Generates a text report and saves it to a file for multiple domains, including screenshot paths and redirected links.
 
     :param results_list: A list of dictionaries, each containing the scan data for a domain.
     :param report_file: The name of the report file.
@@ -57,20 +57,26 @@ def generate_text_report(results_list, report_file):
             domain_name = results.get("Domain Name", "Unknown Domain")
             file.write(f"Domain: {domain_name}\n")
             file.write("-" * 40 + "\n")
-            
+
+            # Print all key-value pairs, excluding "Domain Name" (already printed)
             for key, value in results.items():
                 if key != "Domain Name":
-                    file.write(f"{key}:\n")
-                    if isinstance(value, dict):
+                    if isinstance(value, dict):  # If value is a nested dictionary
+                        file.write(f"{key}:\n")
                         for sub_key, sub_value in value.items():
                             file.write(f"  {sub_key}: {sub_value}\n")
                     else:
-                        file.write(f"  {value}\n")
+                        file.write(f"{key}: {value}\n")
                 file.write("\n")
 
             # Include the screenshot path in the text report
             screenshot = results.get("Screenshot", "No screenshot available")
             file.write(f"Screenshot: {screenshot}\n")
+
+            # Include the redirected link in the text report
+            redirected_link = results.get("Redirected Link", "No redirect")
+            file.write(f"Redirected url: {redirected_url}\n")
+            print(f"Text Report - Domain: {results.get('Domain Name')}, Redirected url: {redirected_url}")
             
             file.write("=" * 40 + "\n\n")
         
@@ -83,46 +89,55 @@ def generate_text_report(results_list, report_file):
     print(f"Text report saved as '{report_file}'.")
     return report_file
 
+
+from fpdf import FPDF
+import os
+from datetime import datetime
+
+from fpdf import FPDF
+import os
+from datetime import datetime
+
 def generate_pdf_report(results_list, report_file):
     """
-    Generates a PDF report and saves it to a file for multiple domains, embedding screenshots.
-
-    :param results_list: A list of dictionaries, each containing the scan data for a domain.
-    :param report_file: The name of the report file.
-    :return: The path to the generated report file.
+    Generates a PDF report and saves it to a file for multiple domains, embedding screenshots and including redirected links.
+    Ensures that domain info stays on the same page, followed by the screenshot if available.
     """
     pdf = FPDF()
     pdf.add_page()
-    
+
     # Title
     pdf.set_font("Arial", 'B', size=18)
     pdf.cell(200, 10, txt="Domain Scan Report", ln=True, align="C")
     pdf.ln(10)
-    
+
     # Date
     pdf.set_font("Arial", 'I', size=12)
     pdf.cell(200, 10, txt=f"Generated on: {datetime.now()}", ln=True, align="C")
     pdf.ln(20)
-    
+
+    # Iterate over results for each domain
     for results in results_list:
-        domain_name = results.get("Domain Name", "Unknown Domain")
-        
+        # Print for debugging
+        print(f"Processing domain: {results.get('Domain Name')}")
+
         # Domain Name Title
         pdf.set_font("Arial", 'B', size=14)
+        domain_name = results.get("Domain Name", "Unknown Domain")
         pdf.cell(200, 10, txt=f"Domain: {domain_name}", ln=True, align="L")
         pdf.ln(5)
-        
+
         # IP Address
         pdf.set_font("Arial", size=12)
         ip_address = results.get("IP Address", "N/A")
         pdf.cell(200, 10, txt=f"IP Address: {ip_address}", ln=True, align="L")
         pdf.ln(5)
-        
+
         # Port Status
         pdf.set_font("Arial", 'B', size=12)
         pdf.cell(200, 10, txt="Port Status:", ln=True, align="L")
         pdf.set_font("Arial", size=11)
-        
+
         for port, status in results.get("Port Status", {}).items():
             if status.lower() == 'open':
                 pdf.set_text_color(0, 128, 0)  # Green color for "open"
@@ -130,17 +145,16 @@ def generate_pdf_report(results_list, report_file):
                 pdf.set_text_color(255, 0, 0)  # Red color for "closed/filtered"
             else:
                 pdf.set_text_color(0, 0, 0)  # Default color for other statuses
-
             pdf.cell(200, 10, txt=f"  Port {port}: {status}", ln=True, align="L")
-        
+
         pdf.set_text_color(0, 0, 0)  # Reset to default color
         pdf.ln(5)
-        
+
         # HTTP Status
         http_status = results.get("HTTP Status", "N/A")
         pdf.set_font("Arial", 'B', size=12)
 
-        # Determine color based on HTTP status
+        # Set colors based on HTTP status
         if "200" in http_status:
             pdf.set_text_color(0, 128, 0)  # Green for 200 OK
         elif "404" in http_status:
@@ -152,6 +166,26 @@ def generate_pdf_report(results_list, report_file):
 
         pdf.cell(200, 10, txt=f"HTTP Status: {http_status}", ln=True, align="L")
         pdf.ln(10)
+
+        print(f"Results: {results}")  # Print the entire results dictionary
+        redirected_url = results.get("Redirected url", "N/A")
+        print(f"Redirected Link for {results.get('Domain Name')}: {redirected_url}")
+
+        # Redirected Link
+        pdf.set_font("Arial", 'B', size=12)
+        pdf.cell(200, 10, txt="Redirected url:", ln=True, align="L")
+        pdf.set_font("Arial", size=11)
+
+        # Handle long URLs by wrapping them to fit within the page
+        if len(redirected_url) > 80:
+            pdf.multi_cell(0, 10, txt=redirected_url, align="L")
+        else:
+            pdf.cell(200, 10, txt=redirected_url, ln=True, align="L")
+        pdf.ln(5)
+
+        # Ensure there is enough space for the screenshot, if not, add a new page
+        if pdf.get_y() > 230:  # Adjust the position limit based on screenshot size
+            pdf.add_page()
 
         # Embed Screenshot into PDF if it exists
         screenshot = results.get("Screenshot")
@@ -182,7 +216,7 @@ def generate_pdf_report(results_list, report_file):
         pdf.cell(200, 10, txt=line, ln=True, align="L")
     
     pdf.output(report_file)
-    print(f"PDF report saved as '{report_file}'.")
+    print(f"PDF report saved as '{report_file}'")
     return report_file
 
 def summarize_results(results_list):
@@ -249,25 +283,28 @@ if __name__ == "__main__":
     # Example results
     results_list = [
         {
-            "Domain Name": "example.com",
+            "Domain Name": "www.rh-th.com",
             "IP Address": "93.184.216.34",
             "Port Status": {"80": "open", "443": "closed"},
             "HTTP Status": "200 OK",
-            "Screenshot": "screenshots/example_com.png"
+            "Screenshot": "screenshots/example_com.png",
+            "Redirected Link": "https://www.example.com/"
         },
         {
             "Domain Name": "example.org",
             "IP Address": "93.184.216.35",
             "Port Status": {"80": "closed", "443": "open"},
             "HTTP Status": "301 Moved Permanently",
-            "Screenshot": "screenshots/example_org.png"
+            "Screenshot": "screenshots/example_org.png",
+            "Redirected Link": "https://www.example.org/"
         },
         {
             "Domain Name": "example.net",
             "IP Address": "93.184.216.34",  # Same IP as example.com
             "Port Status": {"80": "open", "443": "open"},
             "HTTP Status": "404 Not Found",
-            "Screenshot": "screenshots/example_net.png"
+            "Screenshot": "screenshots/example_net.png",
+            "Redirected Link": "https://www.example.net/notfound"
         }
     ]
     
