@@ -1,6 +1,7 @@
-import json
 import re
 import time
+import sys
+import argparse  # สำหรับการอ่าน arguments
 import logging
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QFileDialog,
@@ -21,10 +22,23 @@ from output_storage import save_scan_results  # Import the save_scan_results fun
 # Set up logging to a file
 logging.basicConfig(filename='http_status_debug.log', level=logging.INFO)
 
+import re
+import time
+import logging
+from PyQt5.QtCore import QThread, pyqtSignal
+from datetime import datetime
+from IP_address import resolve_domain_to_ip
+from PORT_scan import scan_ports
+from HTTP_status import get_http_status_code
+from screenshot_module import capture_domain_screenshot
+from report import generate_report
+from output_storage import save_scan_results
+
 
 class ScanWorker(QThread):
     update_status = pyqtSignal(str)
     finished = pyqtSignal()
+    domains_received = pyqtSignal(list)  # New signal for domains
 
     def __init__(self, domains, config, headless):
         super().__init__()
@@ -35,7 +49,9 @@ class ScanWorker(QThread):
     def run(self):
         results_list = []
         scan_results_to_save = []  # List to store scan results for saving
-
+        
+        self.domains_received.emit(self.domains)  # Emit domains when scan starts
+        
         try:
             for domain in self.domains:
                 sanitized_domain = re.sub(r'[\\/:*?"<>|]', '_', domain)
@@ -154,11 +170,51 @@ class ScanWorker(QThread):
         self.finished.emit()
 
 class DomainScannerApp(QMainWindow):
-    def __init__(self):
+    def __init__(self, domains=None, reportType=None, scanType=None):  # เพิ่มพารามิเตอร์ domains
         super().__init__()
         self.current_config = None
         self.worker = None  # Track the worker thread
         self.initUI()
+
+        if domains:  # ถ้ามี domain ส่งเข้ามา ให้ตั้งค่าเริ่มต้นใน input
+            self.set_domains(domains)
+            
+        if reportType:
+            self.set_report_type(reportType)
+            
+        if scanType:
+            self.set_scan_type(scanType)
+
+    def set_domains(self, domains):
+        logging.info(f"Domains received: {domains}")  
+        if isinstance(domains, list):
+            self.entry_domain.setText(", ".join(domains))
+        else:
+            self.entry_domain.setText(domains)
+
+    def set_report_type(self, reportType):
+        if reportType == 'text':
+         self.report_type_var_text.setChecked(True)
+        else:
+            self.report_type_var_pdf.setChecked(True)
+
+    def set_scan_type(self, scanType):
+        """
+        Automatically triggers the appropriate scan based on the scanType received.
+        """
+        if scanType == 'fast':
+            self.run_fast_scan()  # Automatically trigger fast scan
+        elif scanType == 'detailed':
+            self.run_detailed_scan()  # Automatically trigger detailed scan
+
+    def run_fast_scan(self):
+        print("Fast scan started")
+        self.run_scan(headless=True)  # Simulate Fast Scan
+
+    def run_detailed_scan(self):
+        print("Detailed scan started")
+        self.run_scan(headless=False)  # Simulate Detailed Scan
+
 
     def initUI(self):
         self.setWindowTitle("Domain Scanner Tool")
@@ -270,7 +326,6 @@ class DomainScannerApp(QMainWindow):
 
         # Collect domain inputs and configuration
         domain_input = self.entry_domain.text().strip()
-        print(f"Domains to scan: {domain_input}")
 
         # Ensure domain_input is a string
         if not isinstance(domain_input, str):
@@ -291,11 +346,14 @@ class DomainScannerApp(QMainWindow):
         report_type = 'pdf' if self.report_type_var_pdf.isChecked() else 'text'
         self.current_config['report_type'] = report_type
 
+        logging.info(f"Selected report type: {self.current_config['report_type']}")
+        
         # Start the background scan worker
         self.worker = ScanWorker(domains, self.current_config, headless=headless)
         self.worker.update_status.connect(self.display_message)
         self.worker.finished.connect(self.scan_finished)
         self.worker.finished.connect(self.cleanup_thread)  # Connect to cleanup function
+        self.worker.domains_received.connect(self.set_domains)
         self.worker.start()
 
     def cleanup_thread(self):
@@ -325,13 +383,18 @@ class DomainScannerApp(QMainWindow):
         self.status_bar.showMessage(f"Error: {message}", 5000)
 
 
-def main():
-    import sys
+def main(domains=None, reportType=None,scanType=None):  # เพิ่ม domains argument เพื่อส่งค่าเข้าไปในฟังก์ชัน
     app = QApplication(sys.argv)
-    scanner_app = DomainScannerApp()
+    scanner_app = DomainScannerApp(domains, reportType, scanType)
     scanner_app.show()
     sys.exit(app.exec_())
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Domain Scanner with PyQt5 UI")
+    parser.add_argument('domains', nargs='*', help="List of domains to scan")
+    parser.add_argument('reportType', choices=['text', 'pdf'], default='text', help="Report type (text or pdf)")
+    parser.add_argument('scanType', choices=['fast', 'detailed'], default='fast', help="Scan type (fast or detailed)")
+    args = parser.parse_args()
+
+main(args.domains, args.reportType, args.scanType)  # Pass reportType to the main function
