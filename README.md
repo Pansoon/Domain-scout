@@ -1,4 +1,4 @@
-# IP-Scan
+# Domain-Scout
 
 Automated IP, port, and HTTP status scanning from domains, complete with reporting capabilities and a user-friendly GUI.
 
